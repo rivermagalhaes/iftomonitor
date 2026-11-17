@@ -1,0 +1,14 @@
+import {validateReport, type PhotoInput} from '../supabase/functions/_shared/validate';
+export const dimensions=(width:number,height:number)=>{if(width<=0||height<=0)throw new Error('Imagem inválida');const scale=Math.min(1,1280/Math.max(width,height));return {width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))};};
+export const photoSizeValid=(size:number)=>size>0&&size<=1048576;
+export async function compressPhoto(file:File):Promise<Blob>{
+ const bitmap=await createImageBitmap(file);try{const size=dimensions(bitmap.width,bitmap.height),canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Câmera indisponível');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+ const encode=(quality:number)=>new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Foto inválida')),'image/jpeg',quality));let result=await encode(.8);for(const quality of [.65,.5,.35]){if(result.size<=300*1024)break;result=await encode(quality);}if(!photoSizeValid(result.size))throw new Error('Foto maior que 1 MB');return result;}finally{bitmap.close();}
+}
+export const reportPayload=(bus_label:string,route_name:string,category:string,message:string,photos:PhotoInput[],honeypot='')=>({...validateReport({bus_label,route_name,category,message,photos,honeypot}),honeypot,action:'create'});
+export const qrUrl=(origin:string,bus:string)=>`${origin.replace(/\/$/,'')}/#/relatar?bus=${encodeURIComponent(bus)}`;
+export type Row=Record<string,unknown>;
+export function filterRows(rows:Row[],filters:Record<string,string>,from='',to=''){return rows.filter(r=>Object.entries(filters).every(([k,v])=>!v||r[k]===v)&&(!from||String(r.started_at||r.created_at)>=from)&&(!to||String(r.started_at||r.created_at)<=to+'T23:59:59.999Z'));}
+export function csv(rows:Row[],columns=Object.keys(rows[0]||{})){const cell=(v:unknown)=>{let s=typeof v==='object'&&v!==null?JSON.stringify(v):String(v??'');if(/^[=+@-]/.test(s))s="'"+s;return '"'+s.replaceAll('"','""')+'"';};return '\uFEFF'+[columns.map(cell).join(','),...rows.map(r=>columns.map(k=>cell(r[k])).join(','))].join('\r\n');}
+export function download(name:string,content:Blob|string){const url=URL.createObjectURL(typeof content==='string'?new Blob([content],{type:'text/csv;charset=utf-8'}):content),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+export async function allRows(client:import('./client').WebClient,table:string,filter?:[string,string],order='id'){const rows:Row[]=[];for(let offset=0;;offset+=500){let query=client.from(table).select('*').order(order).range(offset,offset+499);if(filter)query=query.eq(...filter);const {data,error}=await query;if(error)throw error;rows.push(...data);if(data.length<500)return rows;}}

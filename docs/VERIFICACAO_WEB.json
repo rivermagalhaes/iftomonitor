@@ -1,0 +1,71 @@
+{
+  "status": "PRONTO",
+  "errors": [],
+  "checks": [
+    "saudação e sincronização demo",
+    "parada automática sem intervenção",
+    "downloads conjuntos de pontos, paradas, eventos e GeoJSON; nomes com onibus/rota e eventos recolhidos",
+    "histórico preservado após reload",
+    "cancelar limpeza preserva demo",
+    "confirmar limpeza apaga histórico demo"
+  ],
+  "layouts": [
+    {
+      "screen": "Início",
+      "headerTop": 48,
+      "navBottom": 844,
+      "viewport": 844,
+      "overflow": false,
+      "topPadding": "24px",
+      "bottomPadding": "12px",
+      "viewportFit": true
+    },
+    {
+      "screen": "Viagem",
+      "headerTop": 48,
+      "navBottom": 844,
+      "viewport": 844,
+      "overflow": false,
+      "topPadding": "24px",
+      "bottomPadding": "12px",
+      "viewportFit": true
+    },
+    {
+      "screen": "Detalhe",
+      "headerTop": 48,
+      "navBottom": 844,
+      "viewport": 844,
+      "overflow": false,
+      "topPadding": "24px",
+      "bottomPadding": "12px",
+      "viewportFit": true
+    },
+    {
+      "screen": "Histórico",
+      "headerTop": 48,
+      "navBottom": 844,
+      "viewport": 844,
+      "overflow": false,
+      "topPadding": "24px",
+      "bottomPadding": "12px",
+      "viewportFit": true
+    },
+    {
+      "screen": "Ajustes",
+      "headerTop": 48,
+      "navBottom": 844,
+      "viewport": 844,
+      "overflow": false,
+      "topPadding": "24px",
+      "bottomPadding": "12px",
+      "viewportFit": true
+    }
+  ],
+  "downloads": [
+    "ifto-monitor_demo_Onibus-01_Exemplo-Centro_20261116-0924_bff98fda.csv",
+    "ifto-monitor_demo_Onibus-01_Exemplo-Centro_20261116-0924_bff98fda_stops.csv",
+    "ifto-monitor_demo_Onibus-01_Exemplo-Centro_20261116-0924_bff98fda_eventos.csv",
+    "ifto-monitor_demo_Onibus-01_Exemplo-Centro_20261116-0924_bff98fda.geojson"
+  ],
+  "scope": "Chromium, build de produção; safe-area física Android NÃO TESTADO"
+}

@@ -1,0 +1,30 @@
+
+> ifto-monitor@1.9.0 build
+> tsc --noEmit && vite build --configLoader runner
+
+vite v7.3.8 building client environment for production...
+transforming...
+node.exe : node_modules/lucide-react/dist/esm/context.mjs (2:0): Module level directives cause errors when bundled, 
+"use client" in "node_modules/lucide-react/dist/esm/context.mjs" was ignored.
+No linha:1 caractere:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (node_modules/lu...s" was ignored.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+node_modules/lucide-react/dist/esm/Icon.mjs (2:0): Module level directives cause errors when bundled, "use client" in 
+"node_modules/lucide-react/dist/esm/Icon.mjs" was ignored.
+✓ 2044 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                           0.42 kB │ gzip:   0.30 kB
+dist/assets/Geist-Regular-5U7sAi-B.ttf  125.96 kB
+dist/assets/index-BROH8GUG.css           11.77 kB │ gzip:   3.41 kB
+dist/assets/web-DD60o7vM.js               0.36 kB │ gzip:   0.25 kB
+dist/assets/web-CtLZ1N8p.js               0.84 kB │ gzip:   0.40 kB
+dist/assets/web-DreypI8L.js               1.15 kB │ gzip:   0.55 kB
+dist/assets/web-DgR8hs9H.js               2.30 kB │ gzip:   0.92 kB
+dist/assets/web-CEkMfP_u.js               6.34 kB │ gzip:   2.22 kB
+dist/assets/web-CfU9uYaE.js               8.67 kB │ gzip:   2.95 kB
+dist/assets/index-CBF6TbEr.js           355.93 kB │ gzip: 111.78 kB
+✓ built in 4.08s

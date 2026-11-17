@@ -1,0 +1,5 @@
+<resources>
+ <color name="colorPrimary">@color/ic_launcher_background</color>
+ <color name="colorPrimaryDark">#1F6B2C</color>
+ <color name="colorAccent">@color/ic_launcher_background</color>
+</resources>

@@ -1,0 +1,12 @@
+node_modules/
+.npm-cache/
+dist/
+dist-web/
+.env
+.env.*
+!.env.example
+android/.gradle/
+android/local.properties
+android/**/build/
+
+hs_err_pid*.log

@@ -1,0 +1,17 @@
+import { test, expect } from 'vitest';
+import { detectStops, StopDetector } from '../src/services/stops';
+import { distance, haversine } from '../src/lib/geo';
+import { defaults, pending, type GpsPoint } from '../src/data/models';
+const point = (s: number, offset = 0, speed: number | null = 0, accuracy = 5): GpsPoint => ({ id: String(s), trip_id: 't', seq: s + 1, latitude: 0, longitude: offset, accuracy_m: accuracy, speed_mps: speed, recorded_at: new Date(s * 1000).toISOString(), received_at: new Date(s * 1000).toISOString(), device_id: 'd', source: 'demo', accepted: accuracy <= 50, ...pending });
+const stationary = (duration: number) => Array.from({ length: duration / 10 + 1 }, (_, i) => point(i * 10));
+test('parada 60s cria uma candidata aberta', () => { const stops = detectStops(stationary(60), defaults); expect(stops).toHaveLength(1); expect(stops[0]).toMatchObject({ duration_s: 60, departed_at: null }); });
+test('10s não é parada', () => expect(detectStops(stationary(10), defaults)).toHaveLength(0));
+test('jitter dentro do raio mantém uma parada', () => expect(detectStops(stationary(60).map((p, i) => ({ ...p, longitude: i % 2 * .00005 })), defaults)).toHaveLength(1));
+test('saída requer dois pontos de movimento e retorno cria segundo grupo', () => { const points = [...stationary(30), point(40, .001, 5), point(50, .002, 5), point(60, .002), point(70, .002), point(80, .002)]; const s = detectStops(points, defaults); expect(s).toHaveLength(2); expect(s[0].departed_at).toBe(point(30).recorded_at); expect(s[1].departed_at).toBeNull(); });
+test('um ponto fora seguido de retorno não duplica parada', () => { const s = detectStops([...stationary(20), point(30, .002, 5), point(40), point(50)], defaults); expect(s).toHaveLength(1); expect(s[0].duration_s).toBe(50); });
+test('lacuna fecha grupo sem unir paradas', () => { const s = detectStops([...stationary(20), point(100), point(110), point(120)], defaults); expect(s).toHaveLength(2); expect(s[0].departed_at).toBe(point(20).recorded_at); });
+test('pontos imprecisos ignorados', () => expect(detectStops(stationary(60).map(p => ({ ...p, accuracy_m: 100, accepted: false })), defaults)).toHaveLength(0));
+test('velocidade ausente usa deslocamento/tempo', () => { expect(detectStops(stationary(60).map(p => ({ ...p, speed_mps: null })), defaults)).toHaveLength(1); expect(detectStops(stationary(60).map((p, i) => ({ ...p, longitude: i * .001, speed_mps: null })), defaults)).toHaveLength(0); });
+test('viagem só em movimento não produz parada', () => expect(detectStops(stationary(60).map((p, i) => ({ ...p, longitude: i * .001, speed_mps: 5 })), defaults)).toHaveLength(0));
+test('incremental e lote produzem mesmos dados', () => { const d = new StopDetector(defaults); const p = stationary(60); p.forEach(p => d.push(p)); expect(d.stops).toEqual(detectStops(p, defaults)); });
+test('Haversine conhecido e distância exclui pontos rejeitados', () => { expect(haversine({ latitude: 0, longitude: 0 }, { latitude: 0, longitude: 1 })).toBeCloseTo(111194.9266, 2); expect(distance([point(0), point(10, 50, 0, 100), point(20, .0001)])).toBeCloseTo(11.11949266, 2); });

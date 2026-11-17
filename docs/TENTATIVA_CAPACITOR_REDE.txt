@@ -1,0 +1,99 @@
+JAVA_HOME=C:/Program Files/Eclipse Adoptium/jdk-21.0.13.9-hotspot
+ANDROID_HOME=C:/Users/river/AppData/Local/Android/Sdk
+ANDROID_SDK_ROOT=C:/Users/river/AppData/Local/Android/Sdk
+$ java -version
+openjdk version "21.0.13" 2026-10-20 LTS
+OpenJDK Runtime Environment Temurin-21.0.13+9 (build 21.0.13+9-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.13+9 (build 21.0.13+9-LTS, mixed mode, sharing)
+exit: 0
+
+$ npm install --save-dev --save-exact @capacitor/cli@7 @capacitor/assets --cache .npm-cache
+npm error code EACCES
+npm error errno EACCES
+npm error FetchError: request to https://registry.npmjs.org/@capacitor%2fassets failed, reason: 
+npm error     at ClientRequest.<anonymous> (C:\Program Files\nodejs\node_modules\npm\node_modules\minipass-fetch\lib\index.js:130:14)
+npm error     at ClientRequest.emit (node:events:509:28)
+npm error     at emitErrorEvent (node:_http_client:109:11)
+npm error     at _destroy (node:_http_client:993:9)
+npm error     at onSocketNT (node:_http_client:1014:5)
+npm error     at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+npm error   code: 'EACCES',
+npm error   errno: 'EACCES',
+npm error   type: 'system',
+npm error   requiredBy: '.'
+npm error }
+npm error
+npm error The operation was rejected by your operating system.
+npm error It's possible that the file was already in use (by a text editor or antivirus), or that you lack permissions to access it.
+npm error
+npm error If you believe this might be a permissions issue, please double-check the permissions of the file and its containing directories, or try running the command again as root/Administrator.
+npm error A complete log of this run can be found in: C:\Users\river\dev\ifto-monitor\.npm-cache\_logs\2026-11-14T18_34_46_136Z-debug-0.log
+exit: 1
+
+$ npm run build
+
+> ifto-monitor@1.0.0 build
+> tsc --noEmit && vite build --configLoader runner
+
+vite v7.3.8 building client environment for production...
+transforming...
+✓ 2009 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                           0.42 kB │ gzip:  0.30 kB
+dist/assets/Geist-Regular-5U7sAi-B.ttf  125.96 kB
+dist/assets/index-Dat8JSXC.css            8.78 kB │ gzip:  2.77 kB
+dist/assets/index-D5xj2fyn.js           293.43 kB │ gzip: 93.13 kB
+✓ built in 2.91s
+node_modules/lucide-react/dist/esm/context.mjs (2:0): Module level directives cause errors when bundled, "use client" in "node_modules/lucide-react/dist/esm/context.mjs" was ignored.
+node_modules/lucide-react/dist/esm/Icon.mjs (2:0): Module level directives cause errors when bundled, "use client" in "node_modules/lucide-react/dist/esm/Icon.mjs" was ignored.
+exit: 0
+
+$ npx --no cap add android
+npm error code EACCES
+npm error errno EACCES
+npm error FetchError: request to https://registry.npmjs.org/cap failed, reason: 
+npm error     at ClientRequest.<anonymous> (C:\Program Files\nodejs\node_modules\npm\node_modules\minipass-fetch\lib\index.js:130:14)
+npm error     at ClientRequest.emit (node:events:509:28)
+npm error     at emitErrorEvent (node:_http_client:109:11)
+npm error     at _destroy (node:_http_client:993:9)
+npm error     at onSocketNT (node:_http_client:1014:5)
+npm error     at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+npm error   code: 'EACCES',
+npm error   errno: 'EACCES',
+npm error   type: 'system'
+npm error }
+npm error
+npm error The operation was rejected by your operating system.
+npm error It's possible that the file was already in use (by a text editor or antivirus), or that you lack permissions to access it.
+npm error
+npm error If you believe this might be a permissions issue, please double-check the permissions of the file and its containing directories, or try running the command again as root/Administrator.
+npm error A complete log of this run can be found in: C:\Users\river\dev\ifto-monitor\.npm-cache\_logs\2026-11-14T18_34_54_381Z-debug-0.log
+exit: 1
+
+$ npx --no cap sync android
+npm error code EACCES
+npm error errno EACCES
+npm error FetchError: request to https://registry.npmjs.org/cap failed, reason: 
+npm error     at ClientRequest.<anonymous> (C:\Program Files\nodejs\node_modules\npm\node_modules\minipass-fetch\lib\index.js:130:14)
+npm error     at ClientRequest.emit (node:events:509:28)
+npm error     at emitErrorEvent (node:_http_client:109:11)
+npm error     at _destroy (node:_http_client:993:9)
+npm error     at onSocketNT (node:_http_client:1014:5)
+npm error     at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+npm error   code: 'EACCES',
+npm error   errno: 'EACCES',
+npm error   type: 'system'
+npm error }
+npm error
+npm error The operation was rejected by your operating system.
+npm error It's possible that the file was already in use (by a text editor or antivirus), or that you lack permissions to access it.
+npm error
+npm error If you believe this might be a permissions issue, please double-check the permissions of the file and its containing directories, or try running the command again as root/Administrator.
+npm error A complete log of this run can be found in: C:\Users\river\dev\ifto-monitor\.npm-cache\_logs\2026-11-14T18_34_55_432Z-debug-0.log
+exit: 1
+
+$ android/gradlew.bat assembleDebug
+NÃO EXECUTADO: Gradle Wrapper ausente; projeto Capacitor não gerado.
+
+APK existe: false

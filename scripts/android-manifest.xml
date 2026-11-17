@@ -1,0 +1,17 @@
+<!-- MODELO: integrar ao manifest GERADO por cap add android, não substituí-lo. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <application>
+    <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="br.edu.ifto.monitor" android:host="auth" android:pathPrefix="/callback" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

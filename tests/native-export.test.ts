@@ -1,0 +1,10 @@
+﻿import { Capacitor } from '@capacitor/core';
+import { Filesystem } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { test, expect, vi } from 'vitest';
+import { exportTrip } from '../src/services/export';
+import { pending, type Trip } from '../src/data/models';
+vi.mock('@capacitor/core',()=>({Capacitor:{isNativePlatform:()=>true}}));
+vi.mock('@capacitor/filesystem',()=>({Directory:{Cache:'CACHE'},Encoding:{UTF8:'utf8'},Filesystem:{writeFile:vi.fn(async({path}:{path:string})=>({uri:'file:///cache/'+path}))}}));
+vi.mock('@capacitor/share',()=>({Share:{share:vi.fn(async()=>({}))}}));
+test('binding nativo salva CSV de pontos/paradas com BOM e GeoJSON antes de compartilhar',async()=>{const trip:Trip={id:'12345678',vehicle_id:'v',vehicle_label_snapshot:'Ônibus 01',owner_user_id:null,operator_label:'AB',status:'finished',started_at:'2026-11-14T12:00:00.000Z',ended_at:'2026-11-14T12:05:00.000Z',ended_reason:'user',device_id:'d',created_at:'',updated_at:'',...pending};expect(Capacitor.isNativePlatform()).toBe(true);await exportTrip(trip,[],[],'field','csv');const calls=vi.mocked(Filesystem.writeFile).mock.calls;expect(calls).toHaveLength(2);expect(calls[0][0]).toMatchObject({directory:'CACHE',encoding:'utf8'});expect(calls[0][0].data).toMatch(/^\uFEFFtrip_id/);expect(calls[1][0].path).toMatch(/_stops.csv$/);expect(calls[1][0].data).toMatch(/^\uFEFFstop_id/);await exportTrip(trip,[],[],'field','geojson');expect(JSON.parse(String(vi.mocked(Filesystem.writeFile).mock.calls[2][0].data)).type).toBe('FeatureCollection');expect(Share.share).toHaveBeenCalledTimes(2);});

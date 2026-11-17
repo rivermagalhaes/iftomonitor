@@ -1,0 +1,4 @@
+
+> ifto-monitor@1.9.0 lint
+> eslint src tests
+

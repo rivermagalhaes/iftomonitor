@@ -1,0 +1,19 @@
+/* Fonte da paleta web: Tailwind e componentes usam estas variaveis. */
+:root {
+  --color-primary: #2F9E41;
+  --color-primary-strong: #278A38;
+  /* Derivacao acessivel: o token strong sozinho fica abaixo de 4.5:1 com branco. */
+  --color-button: color-mix(in srgb, var(--color-primary-strong) 96%, black);
+  --color-button-hover: color-mix(in srgb, var(--color-primary-strong) 94%, black);
+  --color-dark: #1F6B2C;
+  --color-light: #7FCB6A;
+  --color-soft: #E6F4E8;
+  --color-danger: #D83232;
+  --color-surface: #F8FBF5;
+  --color-white: #FFFFFF;
+  --color-muted: #526958;
+  --color-border: #C6E3CC;
+  --color-shadow: rgb(31 107 44 / 13%);
+  --color-shadow-subtle: rgb(31 107 44 / 2%);
+  --color-backdrop: rgb(16 54 22 / 53%);
+}

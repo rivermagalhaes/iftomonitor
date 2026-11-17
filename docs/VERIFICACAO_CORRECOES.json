@@ -1,0 +1,65 @@
+[
+  {
+    "command": "npm run lint",
+    "compat": false,
+    "code": 0,
+    "stdout": "\n> ifto-monitor@1.0.0 lint\n> eslint src tests\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run typecheck",
+    "compat": false,
+    "code": 0,
+    "stdout": "\n> ifto-monitor@1.0.0 typecheck\n> tsc --noEmit\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run test",
+    "compat": false,
+    "code": 0,
+    "stdout": "\n> ifto-monitor@1.0.0 test\n> node scripts/test.mjs\n\n\n RUN  v5.0.5 C:/dev/ifto-monitor\n\n\n Test Files  11 passed (11)\n      Tests  47 passed (47)\n   Start at  21:07:43\n   Duration  23.52s (environment 62%, tests 17%, setup 14%, import 5%, transform 2%)\n\n    Isolate  11 workers spawned · ~1.36s startup each (spawn + environment, per file)\n             at least ~13.61s faster with isolate: false — reuses workers across files instead of one per file\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run build",
+    "compat": false,
+    "code": 0,
+    "stdout": "\n> ifto-monitor@1.0.0 build\n> tsc --noEmit && vite build --configLoader runner\n\nvite v7.3.8 building client environment for production...\ntransforming...\n✓ 2028 modules transformed.\nrendering chunks...\ncomputing gzip size...\ndist/index.html                           0.42 kB │ gzip:  0.30 kB\ndist/assets/Geist-Regular-5U7sAi-B.ttf  125.96 kB\ndist/assets/index-CPj8J83D.css            8.96 kB │ gzip:  2.80 kB\ndist/assets/web-D006yO7m.js               0.36 kB │ gzip:  0.25 kB\ndist/assets/web-D4fL-Sox.js               0.84 kB │ gzip:  0.40 kB\ndist/assets/web-MiNKoBss.js               1.15 kB │ gzip:  0.55 kB\ndist/assets/web-B90TBm9c.js               2.30 kB │ gzip:  0.93 kB\ndist/assets/web-BRef9qiY.js               8.67 kB │ gzip:  2.95 kB\ndist/assets/index-D0GJEV_N.js           308.59 kB │ gzip: 98.68 kB\n✓ built in 3.07s\n",
+    "stderr": "node_modules/lucide-react/dist/esm/context.mjs (2:0): Module level directives cause errors when bundled, \"use client\" in \"node_modules/lucide-react/dist/esm/context.mjs\" was ignored.\nnode_modules/lucide-react/dist/esm/Icon.mjs (2:0): Module level directives cause errors when bundled, \"use client\" in \"node_modules/lucide-react/dist/esm/Icon.mjs\" was ignored.\n"
+  },
+  {
+    "command": "npx cap sync android",
+    "compat": false,
+    "code": 1,
+    "stdout": "",
+    "stderr": "node:os:306\r\n    throw new ERR_SYSTEM_ERROR(ctx);\r\n    ^\r\n\r\nSystemError [ERR_SYSTEM_ERROR]: A system error occurred: uv_os_get_passwd returned ENOMEM (not enough memory)\r\n    at Object.userInfo (node:os:306:11)\r\n    at getShell (C:\\dev\\ifto-monitor\\node_modules\\@ionic\\utils-terminal\\dist\\info.js:16:26)\r\n    at Object.<anonymous> (C:\\dev\\ifto-monitor\\node_modules\\@ionic\\utils-terminal\\dist\\info.js:36:12)\r\n    at Module._compile (node:internal/modules/cjs/loader:1854:14)\r\n    at Object..js (node:internal/modules/cjs/loader:1985:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1577:32)\r\n    at Module._load (node:internal/modules/cjs/loader:1379:12)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.require (node:internal/modules/cjs/loader:1600:12)\r\n    at require (node:internal/modules/helpers:153:16) {\r\n  code: 'ERR_SYSTEM_ERROR',\r\n  info: {\r\n    errno: -4057,\r\n    code: 'ENOMEM',\r\n    message: 'not enough memory',\r\n    syscall: 'uv_os_get_passwd'\r\n  },\r\n  errno: [Getter/Setter],\r\n  syscall: [Getter/Setter]\r\n}\r\n\r\nNode.js v24.16.0\r\n"
+  },
+  {
+    "command": "npx cap sync android",
+    "compat": true,
+    "code": 0,
+    "stdout": "√ Copying web assets from dist to android\\app\\src\\main\\assets\\public in 9.98ms\n√ Creating capacitor.config.json in android\\app\\src\\main\\assets in 999.30μs\n√ copy android in 31.26ms\n√ Updating Android plugins in 3.79ms\n[info] Found 5 Capacitor plugins for android:\n       @capacitor/app@8.1.2\n       @capacitor/filesystem@8.1.5\n       @capacitor/geolocation@8.2.4\n       @capacitor/network@8.0.1\n       @capacitor/share@8.0.3\n√ update android in 52.36ms\n[info] Sync finished in 0.115s\n",
+    "stderr": "[terminal-info] os.userInfo indisponível (ENOMEM); usando variáveis do terminal.\n"
+  },
+  {
+    "command": "node --check scripts/build-apk.mjs",
+    "compat": false,
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "node --check scripts/check-android-manifest.mjs",
+    "compat": false,
+    "code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "node scripts/check-android-manifest.mjs",
+    "compat": false,
+    "code": 0,
+    "stdout": "Manifesto: FINE e COARSE presentes.\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,16 @@
+
+> ifto-monitor@1.9.0 test
+> node scripts/test.mjs
+
+
+ RUN  v5.0.5 C:/dev/ifto-monitor
+
+
+ Test Files  18 passed (18)
+      Tests  144 passed (144)
+   Start at  10:16:29
+   Duration  62.07s (environment 50%, tests 29%, setup 12%, import 8%, transform 1%)
+
+    Isolate  18 workers spawned · ~1.81s startup each (spawn + environment, per file)
+             at least ~30.82s faster with isolate: false — reuses workers across files instead of one per file
+

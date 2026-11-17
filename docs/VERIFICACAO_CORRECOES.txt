@@ -1,0 +1,113 @@
+> npm run lint
+Código: 0
+
+> ifto-monitor@1.0.0 lint
+> eslint src tests
+
+
+> npm run typecheck
+Código: 0
+
+> ifto-monitor@1.0.0 typecheck
+> tsc --noEmit
+
+
+> npm run test
+Código: 0
+
+> ifto-monitor@1.0.0 test
+> node scripts/test.mjs
+
+
+ RUN  v5.0.5 C:/dev/ifto-monitor
+
+
+ Test Files  11 passed (11)
+      Tests  47 passed (47)
+   Start at  21:07:43
+   Duration  23.52s (environment 62%, tests 17%, setup 14%, import 5%, transform 2%)
+
+    Isolate  11 workers spawned · ~1.36s startup each (spawn + environment, per file)
+             at least ~13.61s faster with isolate: false — reuses workers across files instead of one per file
+
+
+> npm run build
+Código: 0
+
+> ifto-monitor@1.0.0 build
+> tsc --noEmit && vite build --configLoader runner
+
+vite v7.3.8 building client environment for production...
+transforming...
+✓ 2028 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                           0.42 kB │ gzip:  0.30 kB
+dist/assets/Geist-Regular-5U7sAi-B.ttf  125.96 kB
+dist/assets/index-CPj8J83D.css            8.96 kB │ gzip:  2.80 kB
+dist/assets/web-D006yO7m.js               0.36 kB │ gzip:  0.25 kB
+dist/assets/web-D4fL-Sox.js               0.84 kB │ gzip:  0.40 kB
+dist/assets/web-MiNKoBss.js               1.15 kB │ gzip:  0.55 kB
+dist/assets/web-B90TBm9c.js               2.30 kB │ gzip:  0.93 kB
+dist/assets/web-BRef9qiY.js               8.67 kB │ gzip:  2.95 kB
+dist/assets/index-D0GJEV_N.js           308.59 kB │ gzip: 98.68 kB
+✓ built in 3.07s
+node_modules/lucide-react/dist/esm/context.mjs (2:0): Module level directives cause errors when bundled, "use client" in "node_modules/lucide-react/dist/esm/context.mjs" was ignored.
+node_modules/lucide-react/dist/esm/Icon.mjs (2:0): Module level directives cause errors when bundled, "use client" in "node_modules/lucide-react/dist/esm/Icon.mjs" was ignored.
+
+> npx cap sync android
+Código: 1
+node:os:306
+    throw new ERR_SYSTEM_ERROR(ctx);
+    ^
+
+SystemError [ERR_SYSTEM_ERROR]: A system error occurred: uv_os_get_passwd returned ENOMEM (not enough memory)
+    at Object.userInfo (node:os:306:11)
+    at getShell (C:\dev\ifto-monitor\node_modules\@ionic\utils-terminal\dist\info.js:16:26)
+    at Object.<anonymous> (C:\dev\ifto-monitor\node_modules\@ionic\utils-terminal\dist\info.js:36:12)
+    at Module._compile (node:internal/modules/cjs/loader:1854:14)
+    at Object..js (node:internal/modules/cjs/loader:1985:10)
+    at Module.load (node:internal/modules/cjs/loader:1577:32)
+    at Module._load (node:internal/modules/cjs/loader:1379:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.require (node:internal/modules/cjs/loader:1600:12)
+    at require (node:internal/modules/helpers:153:16) {
+  code: 'ERR_SYSTEM_ERROR',
+  info: {
+    errno: -4057,
+    code: 'ENOMEM',
+    message: 'not enough memory',
+    syscall: 'uv_os_get_passwd'
+  },
+  errno: [Getter/Setter],
+  syscall: [Getter/Setter]
+}
+
+Node.js v24.16.0
+
+> npx cap sync android
+NODE_OPTIONS: preload scripts/terminal-info-compat.cjs (fallback de metadados do terminal)
+Código: 0
+√ Copying web assets from dist to android\app\src\main\assets\public in 9.98ms
+√ Creating capacitor.config.json in android\app\src\main\assets in 999.30μs
+√ copy android in 31.26ms
+√ Updating Android plugins in 3.79ms
+[info] Found 5 Capacitor plugins for android:
+       @capacitor/app@8.1.2
+       @capacitor/filesystem@8.1.5
+       @capacitor/geolocation@8.2.4
+       @capacitor/network@8.0.1
+       @capacitor/share@8.0.3
+√ update android in 52.36ms
+[info] Sync finished in 0.115s
+[terminal-info] os.userInfo indisponível (ENOMEM); usando variáveis do terminal.
+
+> node --check scripts/build-apk.mjs
+Código: 0
+
+> node --check scripts/check-android-manifest.mjs
+Código: 0
+
+> node scripts/check-android-manifest.mjs
+Código: 0
+Manifesto: FINE e COARSE presentes.

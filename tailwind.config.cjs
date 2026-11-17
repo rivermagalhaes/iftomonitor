@@ -1,0 +1,1 @@
+module.exports = {content:['./index.html','./src/**/*.{ts,tsx}'],theme:{extend:{colors:{brand:'var(--color-primary)','brand-hover':'var(--color-primary-strong)','brand-light':'var(--color-light)','brand-dark':'var(--color-dark)','brand-soft':'var(--color-soft)',danger:'var(--color-danger)',surface:'var(--color-surface)',white:'var(--color-white)'}}},plugins:[]};
