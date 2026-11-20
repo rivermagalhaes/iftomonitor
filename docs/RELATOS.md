@@ -1,6 +1,6 @@
 # Relatos de alunos (v2.2.0)
 
-Quem usa o app (ou a página web `#/relatar`, via QR) preenche **uma única tela** (, o mesmo componente `src/shared/QuickReport.tsx`), com barra fixa no rodapé:
+Quem usa o app (ou a página web `#/relatar`, via QR) preenche **uma única tela** (o mesmo componente `src/shared/QuickReport.tsx`), com barra fixa no rodapé:
 
 1. Título "Relatar problema" + contador "N marcados" e a faixa "Emergência agora? Ligue 190, 193 ou 192.".
 2. **Ônibus** (01, 02, 03, Não sei), pré-marcado pelo QR (`?bus=`) ou pelo último usado.
