@@ -11,7 +11,7 @@ export const t = {
     demo: 'Modo demonstração', demoBanner: 'MODO DEMONSTRAÇÃO — dados fictícios', field: 'Modo campo local',
     login: 'Entrar com e-mail', google: 'Continuar com Google', email: 'E-mail institucional', cloudMissing: 'Nuvem não configurada',
     welcome: 'Olá', monitor: 'Monitoramento do transporte', monitorText: 'Registre o percurso e as paradas do veículo, mesmo sem internet.',
-    newTrip: 'Iniciar nova viagem', start: 'Iniciar viagem', finish: 'Encerrar viagem', confirmFinish: 'Deseja encerrar a viagem?', cancel: 'Cancelar',
+    newTrip: 'Iniciar nova viagem', start: 'Iniciar viagem', finish: 'Finalizar viagem', confirmFinish: 'Deseja encerrar a viagem?', cancel: 'Cancelar',
     gpsPoints: 'Pontos GPS', stops: 'Paradas', pending: 'Pendentes de sincronização', sync: 'Sincronizar agora',
     settings: 'Ajustes', back: 'Voltar', online: 'Online', offline: 'Offline', recording: 'Gravando', active: 'Viagem em andamento',
     selectVehicle: 'Selecione o veículo', rename: 'Renomear', save: 'Salvar', label: 'Rótulo', vehicle: (n: number) => `Ônibus ${String(n).padStart(2, '0')}`,

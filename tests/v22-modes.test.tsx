@@ -1,9 +1,7 @@
 import { test, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { acceptTerms, getAppMode, markMonitorSetupDone, monitorSetupDone, resolveInitialMode, setAppMode, termsAccepted } from '../src/services/appMode';
-import { MONITOR_CODE_HASH, hashMonitorCode, verifyMonitorCode } from '../src/config/monitorCode';
-import { ModeChoice, MonitorSetup, TermsScreen } from '../src/screens/Onboarding';
+import { MonitorSetup, TermsScreen } from '../src/screens/Onboarding';
 import { MonitorPermissions, type PermissionDeps } from '../src/services/monitorPermissions';
 import { MemoryReportStore, NetworkError, ReportQueue, type ReportTransport } from '../src/services/reports';
 import { QuickReport } from '../src/shared/QuickReport';
@@ -12,34 +10,7 @@ import { Monitor } from '../src/services/monitor';
 import { memoryRepository } from './support';
 import type { LocationProvider } from '../src/services/location';
 
-const memory = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }; };
 
-test('aceite dos termos é por versão, com data/hora', () => {
-    const store = memory();
-    expect(termsAccepted(store, '2.2')).toBe(false);
-    acceptTerms(store, '2.2', new Date('2026-11-20T10:00:00Z'));
-    expect(termsAccepted(store, '2.2')).toBe(true);
-    expect(JSON.parse(store.getItem('ifto_terms')!)).toEqual({ version: '2.2', accepted_at: '2026-11-20T10:00:00.000Z' });
-    expect(termsAccepted(store, '2.3')).toBe(false);
-});
-test('escolha de modo é salva; migração: quem já tem viagens vira monitor sem código', async () => {
-    const store = memory();
-    expect(getAppMode(store)).toBeNull();
-    expect(await resolveInitialMode(store, async () => false)).toBeNull();
-    expect(await resolveInitialMode(store, async () => true)).toBe('monitor');
-    expect(getAppMode(store)).toBe('monitor');
-    const other = memory(); setAppMode('aluno', other);
-    expect(await resolveInitialMode(other, async () => true)).toBe('aluno');
-    expect(monitorSetupDone(store)).toBe(false); markMonitorSetupDone(store); expect(monitorSetupDone(store)).toBe(true);
-});
-test('código do monitor: hash SHA-256 com salt', async () => {
-    expect(MONITOR_CODE_HASH).toMatch(/^[0-9a-f]{64}$/);
-    expect(await verifyMonitorCode('IFTO2026')).toBe(true);
-    expect(await verifyMonitorCode(' IFTO2026 ')).toBe(true);
-    expect(await verifyMonitorCode('ifto2026')).toBe(false);
-    expect(await verifyMonitorCode('')).toBe(false);
-    expect(await hashMonitorCode('IFTO2026')).toBe(MONITOR_CODE_HASH);
-});
 test('termos exigem "Li e concordo" para continuar', () => {
     const accept = vi.fn();
     render(<TermsScreen onAccept={accept}/>);
@@ -47,20 +18,6 @@ test('termos exigem "Li e concordo" para continuar', () => {
     expect(go.disabled).toBe(true);
     fireEvent.click(screen.getByLabelText('Li e concordo'));
     expect(go.disabled).toBe(false); fireEvent.click(go); expect(accept).toHaveBeenCalled();
-});
-test('escolha: aluno vai direto; monitor pede o código e código errado volta à escolha', async () => {
-    const student = vi.fn(), monitor = vi.fn();
-    render(<ModeChoice onStudent={student} onMonitor={monitor}/>);
-    fireEvent.click(screen.getByRole('button', { name: 'Sou aluno' })); expect(student).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Sou monitor/ }));
-    fireEvent.change(screen.getByLabelText('Código do monitor'), { target: { value: 'errado' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Entrar como monitor' }));
-    await screen.findByText('Código incorreto. Escolha novamente.');
-    expect(monitor).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /Sou monitor/ }));
-    fireEvent.change(screen.getByLabelText('Código do monitor'), { target: { value: 'IFTO2026' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Entrar como monitor' }));
-    await waitFor(() => expect(monitor).toHaveBeenCalled());
 });
 const api = (state: { loc: boolean; fg: boolean; notif: boolean; bat: boolean }) => { const mock = { checkPermissions: vi.fn(async () => ({ location: state.fg ? 'granted' : 'denied', backgroundLocation: state.loc ? 'granted' : 'denied', notification: state.notif ? 'granted' : 'denied' })), requestPermissions: vi.fn(async (o: { permissions?: string[] }) => { if (o.permissions?.includes('location')) state.fg = true; if (o.permissions?.includes('backgroundLocation')) state.loc = true; if (o.permissions?.includes('notification')) state.notif = true; return {}; }), openSettings: vi.fn(async () => { }) };
     return { mock, api: mock as unknown as PermissionDeps['api'], native: true, battery: async () => state.bat, requestBattery: vi.fn(async () => { state.bat = true; return true; }) };
@@ -94,7 +51,7 @@ test('assistente do monitor avança em sequência e termina em Tudo pronto', asy
     fireEvent.click(await screen.findByRole('button', { name: 'Permitir localização' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Permitir avisos' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Permitir uso contínuo' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Ir para o início' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Iniciar viagem' }));
     expect(done).toHaveBeenCalled();
 });
 
@@ -186,12 +143,5 @@ test('trip_started grava batteryExempt, locationAlways e notifications; só a et
     const started = monitor.snapshot.active!.events!.find(e => e.type === 'trip_started')!;
     expect(started.details).toEqual({ batteryExempt: true, locationAlways: true, notifications: true });
     await monitor.dispose();
-});
-test('rota do aluno não importa Monitor nem plugins de geolocalização', async () => {
-    const { readFileSync } = await import('node:fs');
-    for (const f of ['src/screens/Student.tsx', 'src/services/reports.ts', 'src/shared/QuickReport.tsx']) {
-        const src = readFileSync(f, 'utf8');
-        expect(src).not.toMatch(/geolocation|background-geolocation|services\/monitor'|services\/location/);
-    }
 });
 void MemoryRouter;

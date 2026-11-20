@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as NativeApp } from '@capacitor/app';
 import { termsSections } from '../config/terms';
-import { verifyMonitorCode } from '../config/monitorCode';
+import { validateProfile, type Profile } from '../services/profile';
 import type { MonitorPermissions, PermissionFlags, PermissionStep } from '../services/monitorPermissions';
 
 export function TermsText() {
@@ -14,17 +14,14 @@ export function TermsScreen({ onAccept }: { onAccept: () => void }) {
     return <section className="card stack" aria-label="Termos de uso e privacidade"><h2>Termos de uso e privacidade</h2><TermsText/><label><input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)}/>Li e concordo</label><button disabled={!agree} onClick={onAccept}>Continuar</button></section>;
 }
 
-export function ModeChoice({ onStudent, onMonitor, verify = verifyMonitorCode }: { onStudent: () => void; onMonitor: () => void; verify?: (code: string) => Promise<boolean> }) {
-    const [asking, setAsking] = useState(false), [error, setError] = useState('');
-    if (asking) return <MonitorCodeForm verify={verify} onOk={onMonitor} onWrong={() => { setAsking(false); setError('Código incorreto. Escolha novamente.'); }} onCancel={() => setAsking(false)}/>;
-    return <section className="card stack"><h2>Como você vai usar o app?</h2>{error && <p role="alert" className="error">{error}</p>}<button className="bigChoice" onClick={() => { setError(''); onStudent(); }}>Sou aluno</button><button className="bigChoice secondary" onClick={() => { setError(''); setAsking(true); }}>Sou monitor (coleta do ônibus)</button></section>;
-}
-
-/** Pede o código do monitor. Código errado chama onWrong (a tela de origem decide: voltar à escolha de modo). */
-export function MonitorCodeForm({ onOk, onWrong, onCancel, verify = verifyMonitorCode }: { onOk: () => void; onWrong: () => void; onCancel: () => void; verify?: (code: string) => Promise<boolean> }) {
-    const [code, setCode] = useState(''), [busy, setBusy] = useState(false);
-    const submit = async () => { setBusy(true); try { if (await verify(code)) onOk(); else onWrong(); } finally { setBusy(false); } };
-    return <section className="card stack"><h2>Código do monitor</h2><label>Código do monitor<input value={code} autoComplete="off" autoCapitalize="characters" onChange={e => setCode(e.target.value)}/></label><button disabled={busy || !code.trim()} onClick={() => void submit()}>Entrar como monitor</button><button className="link" onClick={onCancel}>Voltar</button></section>;
+export function SignupScreen({ initial, onDone, onBack }: { initial?: Profile | null; onDone: (profile: Profile) => void; onBack?: () => void }) {
+    const [name, setName] = useState(initial?.name ?? ''), [email, setEmail] = useState(initial?.email ?? ''), [error, setError] = useState('');
+    const submit = () => { const r = validateProfile(name, email); if ('error' in r) setError(r.error); else onDone(r.profile); };
+    return <form noValidate className="card stack" onSubmit={e => { e.preventDefault(); submit(); }}><h2>Cadastro rápido</h2><p className="muted">Sem senha. Leva 20 segundos.</p>
+        <label>Nome<input value={name} autoComplete="name" maxLength={60} onChange={e => { setName(e.target.value); setError(''); }}/></label>
+        <label>E-mail<input type="email" inputMode="email" autoComplete="email" autoCapitalize="none" value={email} onChange={e => { setEmail(e.target.value); setError(''); }}/></label>
+        {error && <p role="alert" className="error">{error}</p>}
+        <button className="bigChoice">Entrar</button>{onBack && <button type="button" className="link" onClick={onBack}>Voltar</button>}</form>;
 }
 
 const stepInfo: Record<PermissionStep, { title: string; text: string; button: string }> = {
@@ -35,7 +32,7 @@ const stepInfo: Record<PermissionStep, { title: string; text: string; button: st
 const allSteps: PermissionStep[] = ['location', 'notifications', 'battery'];
 const stepOk = (step: PermissionStep, f: PermissionFlags) => step === 'location' ? f.locationAlways : step === 'notifications' ? f.notifications : f.batteryExempt;
 
-export function MonitorSetup({ permissions, onDone }: { permissions: MonitorPermissions; onDone: () => void }) {
+export function MonitorSetup({ permissions, onDone, doneLabel = 'Iniciar viagem' }: { permissions: MonitorPermissions; onDone: () => void; doneLabel?: string }) {
     const [flags, setFlags] = useState<PermissionFlags | null>(null), [skipped, setSkipped] = useState<PermissionStep[]>([]), [needsSettings, setNeedsSettings] = useState(false), [busy, setBusy] = useState(false);
     const refresh = useCallback(async () => { const next = await permissions.read(); setFlags(next); if (next.locationAlways) setNeedsSettings(false); }, [permissions]);
     useEffect(() => {
@@ -51,7 +48,7 @@ export function MonitorSetup({ permissions, onDone }: { permissions: MonitorPerm
     const act = async (s: PermissionStep) => { setBusy(true); try { const r = await permissions.request(s); setNeedsSettings(r.needsSettings); await refresh(); } finally { setBusy(false); } };
     if (!step) {
         const missing = allSteps.filter(s => !stepOk(s, flags));
-        return <section className="card stack"><h2>Tudo pronto</h2>{missing.length ? <p className="warning" role="status">Faltou permitir: {missing.map(s => stepInfo[s].title.slice(3).toLowerCase()).join(', ')}. Ao tocar em "Iniciar viagem", o app pede novamente.</p> : <p>O aparelho está preparado para gravar viagens.</p>}<button onClick={onDone}>Ir para o início</button></section>;
+        return <section className="card stack"><h2>Tudo pronto</h2>{missing.length ? <p className="warning" role="status">Faltou permitir: {missing.map(s => stepInfo[s].title.slice(3).toLowerCase()).join(', ')}. Na próxima viagem, o app pede de novo.</p> : <p>O aparelho está preparado para gravar viagens.</p>}<button onClick={onDone}>{doneLabel}</button></section>;
     }
     const info = stepInfo[step];
     return <section className="card stack"><h2>{info.title}</h2><p>{info.text}</p>

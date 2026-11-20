@@ -38,3 +38,15 @@
 - **Formulário do aluno em uma tela** (app e `#/relatar`): ônibus, 8 pílulas "Mais comuns", 7 categorias em acordeão e barra fixa (Tirar foto, Descrever, Enviar relato). Removidos o fluxo de 3 etapas, a tela "Quase pronto" e os seletores de rota, "Quando foi?" e lotação. A linha estruturada deixa de levar `rota` e `lotacao` (aceitos se existirem); a rota será inferida pelas viagens GPS. Ver `docs/RELATOS.md`.
 - Modo Aluno sem bolinha de status. Velocímetro conferido na tela Viagem (teste).
 - Envio de relatos: o 400 do APK 2.2.0 vem da Edge Function (que usa 400 "Não foi possível enviar" também para falhas internas/de banco; não foi possível reproduzir pelo payload, que passa nas regras). O app passou a mostrar o motivo real, guardar o HTTP no relato e não reenviar 4xx em loop. Corrigido: comentário acima do limite deixava o texto > 500 e era recusado; agora é truncado. Contrato em `docs/RELATOS.md`.
+
+## 2.3.0 - 2026-11-20
+
+- **App único e simples, sem modos**: removidos Aluno/Monitor, código do monitor (e seu hash), "Mudar para modo Aluno", "Entrar como monitor", bloqueios de troca, `appMode`, `ModeContext`, `monitorCode` e os testes correspondentes. Ver `docs/USO.md` (antigo `MODOS.md`).
+- **Primeiro uso**: termos (v2.3) e **cadastro rápido** (nome e e-mail, sem senha, só local). Ajustes: editar cadastro e "Trocar usuário" (não apaga viagens nem relatos). Usuário vai à nuvem em `extra.user` (viagem) e `u=`/`n=` (relato), sem mudar SQL.
+- **Início** com dois botões gigantes (Iniciar viagem, Relatar problema); barra Início/Relatar/Histórico; Histórico com abas Viagens, Meus relatos e Relatórios (decisão: "Meus relatos" virou aba própria para não perder a lista local). `t.finish` agora é "Finalizar viagem".
+- **Permissões só no primeiro Iniciar viagem** (assistente curto); depois só a etapa pendente. Quem só relata nunca vê pedido de permissão.
+- **Relatar durante a viagem**: ônibus e rota preenchidos e `trip=`/`loc=` na linha; "Voltar ao início" no sucesso. Linha estruturada com `u`, `n`, `trip`, `loc` dentro do limite de 500 (comentário truncado primeiro, depois campos opcionais; problemas nunca perdidos).
+- **Navegação**: cabeçalho fixo "← Voltar" no formulário e nas telas internas; "Descartar este relato?"; botão voltar do Android por rotas (minimiza no Início sem parar a gravação).
+- Painel: usuário e filtro por usuário (relatos e viagens); CSV de relatos com `usuario_nome`, `usuario_email`, `trip_id_curto`, `latitude`, `longitude`.
+- Decisões simples: o celular que ficou em "modo demonstração" cai no modo campo local; as chaves locais antigas (`ifto_app_mode`, `ifto_monitor_setup_done`) são ignoradas; o assistente de permissões usa um indicador local `ifto_trip_setup_done`.
+- Android versionName 2.3.0, versionCode 23000.

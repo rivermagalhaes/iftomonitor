@@ -34,3 +34,5 @@
 .qr .qrX{position:absolute;top:-8px;right:-8px;width:36px;height:36px;min-height:36px;border-radius:50%;border:2px solid #fff;background:#8e1b1b;color:#fff;font-weight:700;cursor:pointer}
 .qr .qrDescribe textarea{width:100%;min-height:90px;font:inherit;font-size:18px;padding:10px;border-radius:10px;border:2px solid var(--qr-line);box-sizing:border-box}
 .qr .qrTrap{position:absolute;left:-10000px}
+.qr .qrEnd{text-align:center;color:#46524a;font-size:14px;margin:14px 0 4px}
+.qr .qrSection:last-of-type{margin-bottom:8px}

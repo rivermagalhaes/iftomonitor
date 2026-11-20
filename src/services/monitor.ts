@@ -52,6 +52,8 @@ export class Monitor {
     private reconnectTask: Promise<void> | null = null;
     private restartedTrips = new Set<string>();
     private syncTimer: ReturnType<typeof setTimeout> | null = null;
+    /** v2.3: cadastro rápido do usuário atual (nome e e-mail). */
+    user: { name: string; email: string } | null = null;
     snapshot: Snapshot = { mode: null, operator: '', busLabel: '', batteryConfirmed: false, vehicles: [], routes: [], recordingState: 'recording', lastPointAt: null, interruption: null, trips: [], points: [], stops: [], active: null, recovery: false, gps: 'waiting', gpsDiagnostics: emptyDiagnostics(), backgroundExplained: false, error: '', notice: '', busy: false, settings: { ...defaults }, reference: cloneReference(defaultReference), online: navigator.onLine };
     constructor(private open: (name: string) => Promise<Repository> = async (name) => new IndexedDbRepository(name), private location: (mode: Mode) => LocationProvider = createLocationProvider, public permissions: MonitorPermissions = new MonitorPermissions()) { }
     subscribe = (listener: () => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
@@ -208,7 +210,7 @@ export class Monitor {
         if (routeId && (!route || !route.active)) throw new Error('Escolha uma rota ativa.');
         if (this.snapshot.mode !== 'demo') await this.requestPendingPermission();
         const { batteryExempt, locationAlways, notifications } = await this.permissions.read(); const flags = { batteryExempt, locationAlways, notifications };
-        await this.service?.start(vehicleId, route, flags);
+        await this.service?.start(vehicleId, route, flags, this.user ?? undefined);
         this.patch({ interruption: null });
         this.patch({ recovery: false });
     }

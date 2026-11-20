@@ -8,6 +8,7 @@ export interface ReportRow { id?: string; created_at: string; bus_label?: string
 export interface ReportRecord {
     row: ReportRow; structured: boolean; bus: string; route: string; sentido: Sentido; quando: Quando | ''; lotacao: Lotacao;
     problems: string[]; urgent: boolean; urgency: Urgency | null; comment: string; photos: number; at: string;
+    userName: string; userEmail: string; trip: string; latitude: string; longitude: string;
 }
 export function toRecord(row: ReportRow): ReportRecord {
     const parsed = parseStructuredLine(row.message);
@@ -19,16 +20,17 @@ export function toRecord(row: ReportRow): ReportRecord {
         sentido: parsed?.sentido ?? '', quando: parsed?.quando ?? '', lotacao: parsed?.lotacao ?? '',
         problems, urgent: isUrgent(problems), urgency: topUrgency(problems),
         comment: parsed ? parsed.comment : String(row.message ?? ''), photos: Number(row.photo_count ?? 0), at: row.created_at,
+        userName: parsed?.userName ?? '', userEmail: parsed?.user ?? '', trip: parsed?.trip ?? '', latitude: parsed?.loc.split(',')[0] ?? '', longitude: parsed?.loc.split(',')[1] ?? '',
     };
 }
 const urgencyRank = (r: ReportRecord) => r.urgent ? 2 : r.urgency === 'A' ? 1 : 0;
 /** Urgentes no topo; dentro do mesmo nível, os mais recentes primeiro. */
 export const sortRecords = (records: readonly ReportRecord[]) => [...records].sort((a, b) => urgencyRank(b) - urgencyRank(a) || b.at.localeCompare(a.at));
 
-export interface ReportFilters { bus?: string; route?: string; sentido?: string; section?: string; urgency?: string; from?: string; to?: string }
+export interface ReportFilters { user?: string; bus?: string; route?: string; sentido?: string; section?: string; urgency?: string; from?: string; to?: string }
 export function filterRecords(records: readonly ReportRecord[], f: ReportFilters): ReportRecord[] {
     return records.filter(r =>
-        (!f.bus || r.bus === f.bus) && (!f.route || r.route === f.route) && (!f.sentido || r.sentido === f.sentido)
+        (!f.user || r.userEmail === f.user) && (!f.bus || r.bus === f.bus) && (!f.route || r.route === f.route) && (!f.sentido || r.sentido === f.sentido)
         && (!f.section || r.problems.some(id => sectionOf(id)?.id === f.section))
         && (!f.urgency || r.problems.some(id => urgencyOf(id) === f.urgency))
         && (!f.from || localDayKey(r.at) >= f.from) && (!f.to || localDayKey(r.at) <= f.to));
@@ -53,12 +55,12 @@ export function summarize(records: readonly ReportRecord[]): Summary {
     };
 }
 
-export const reportCsvColumns = ['data_local', 'onibus', 'rota', 'sentido', 'quando', 'lotacao', 'urgente', 'n_problemas', ...checklistItems.map(i => i.id), 'problemas', 'comentario', 'n_fotos'] as const;
+export const reportCsvColumns = ['data_local', 'onibus', 'rota', 'sentido', 'quando', 'lotacao', 'urgente', 'n_problemas', ...checklistItems.map(i => i.id), 'problemas', 'comentario', 'n_fotos', 'usuario_nome', 'usuario_email', 'trip_id_curto', 'latitude', 'longitude'] as const;
 export function reportsCsv(records: readonly ReportRecord[]): string {
     return csvBr(reportCsvColumns, records.map(r => [
         localDateTimeFortaleza(r.at), r.bus, r.route, r.sentido, r.quando, r.lotacao, r.urgent ? 1 : 0, r.problems.length,
         ...checklistItems.map(i => r.problems.includes(i.id) ? 1 : 0),
-        r.problems.map(labelOf).join('; '), r.comment, r.photos,
+        r.problems.map(labelOf).join('; '), r.comment, r.photos, r.userName, r.userEmail, r.trip, r.latitude.replace('.', ','), r.longitude.replace('.', ','),
     ]));
 }
 export const reportsCsvName = (period: string) => `ifto-monitor_relatos_${period || 'tudo'}.csv`;

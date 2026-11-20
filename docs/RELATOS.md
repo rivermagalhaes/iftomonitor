@@ -1,6 +1,6 @@
 # Relatos de alunos (v2.2.0)
 
-O aluno usa **uma única tela** (app no modo Aluno e página web `#/relatar`, o mesmo componente `src/shared/QuickReport.tsx`), com barra fixa no rodapé:
+Quem usa o app (ou a página web `#/relatar`, via QR) preenche **uma única tela** (, o mesmo componente `src/shared/QuickReport.tsx`), com barra fixa no rodapé:
 
 1. Título "Relatar problema" + contador "N marcados" e a faixa "Emergência agora? Ligue 190, 193 ou 192.".
 2. **Ônibus** (01, 02, 03, Não sei), pré-marcado pelo QR (`?bus=`) ou pelo último usado.
@@ -26,24 +26,28 @@ O app valida com a mesma `validateReport` antes de enviar; o teste `tests/v221-c
 ## Linha estruturada (início do campo `message`)
 
 ```
-[v1|bus=02|sentido=ida|quando=agora|problemas=pneu_furado,sem_cinto] comentário do aluno
+[v1|u=maria@ifto.edu.br|n=Maria Silva|bus=02|sentido=ida|quando=agora|trip=ab12cd34|loc=-10.16735,-48.86950|problemas=pneu_furado,sem_cinto] texto do aluno
 ```
 
 | Campo | Valores |
 |---|---|
 | `v1` | `CHECKLIST_VERSION` |
+| `u` | **opcional**: e-mail do usuário do app (até 60 caracteres); omitido na página web (QR) |
+| `n` | **opcional**: nome do usuário (até 30 caracteres) |
 | `bus` | número do ônibus (`01`, `02`, `03`) ou `nao_sei` |
-| `rota` | **opcional** (ausente nos relatos novos): nome da rota ou `nao_sei` |
-| `sentido` | `ida` (indo para o IFTO), `volta` (voltando do IFTO); omitido se o aluno desmarcar |
-| `quando` | `agora`, `manha`, `noite`, `outro_dia` |
-| `lotacao` | **opcional** (ausente nos relatos novos): `poucos`, `metade`, `cheio`, `superlotado` |
+| `rota` | **opcional** (só se houver, p. ex. durante a viagem): nome da rota ou `nao_sei` |
+| `sentido` | `ida` (antes do meio-dia) ou `volta`; omitido se não houver |
+| `quando` | `agora` (fixo no formulário em uma tela) |
+| `trip` | **opcional**: 8 primeiros caracteres do id da viagem em andamento |
+| `loc` | **opcional**: último ponto da viagem, `lat,lon` com 5 casas; fora da viagem não é coletado |
+| `lotacao` | **opcional**, legado (`poucos`, `metade`, `cheio`, `superlotado`) |
 | `problemas` | ids do checklist, separados por vírgula, na ordem do checklist |
 
-- **Rota**: o relato novo não pergunta a rota. Ela será inferida depois, cruzando ônibus e horário do relato com as viagens GPS (`trips.bus_label` e período). O leitor aceita linhas com ou sem `rota` e `lotacao`; no painel e no CSV essas colunas ficam vazias quando ausentes. `route_name` vai vazio ao servidor.
+- **Limite de 500 caracteres** (Edge Function): a linha é limitada a **400**. Os campos opcionais entram por prioridade (`trip`, `loc`, `u`, `n`, `rota`, `lotacao`) só enquanto couberem; o app impede marcar tantos itens que `v1`, `bus`, `quando` e `problemas` passem de 400; o **comentário é sempre o primeiro a ser truncado** e os problemas marcados nunca se perdem.
+- O leitor (`parseStructuredLine`) aceita linhas com ou sem qualquer campo opcional e relatos antigos (sem linha, ou `v1` com `rota`/`lotacao`); no painel e no CSV as colunas ausentes ficam vazias.
+- **Rota**: será inferida depois, cruzando ônibus e horário do relato com as viagens GPS (`trips.bus_label` e período). `route_name` vai vazio ao servidor quando não há viagem.
+- `category` = categoria do **item de maior urgência** (U > A > N; empate: o primeiro na ordem do checklist), conforme a tabela abaixo.
 - Relatos antigos (sem a linha) continuam normais; o painel só não mostra etiquetas.
-- O texto todo cabe em 500 caracteres: a linha é limitada a 400 (o app impede marcar mais itens) e o comentário usa o restante.
-- `category` = categoria do **item de maior urgência** (U > A > N; empate: o primeiro na ordem do checklist), conforme a tabela abaixo. `route_name` fica vazio quando a rota é "Não sei".
-- Leitura/escrita: `src/shared/reportForm.ts` (`buildStructuredLine`, `parseStructuredLine`).
 
 ## Checklist (versão 1 — 51 itens, 7 seções)
 
@@ -139,7 +143,7 @@ Fonte única: `src/shared/reportChecklist.ts`. Ids são permanentes (nunca renom
 
 - **Relatos**: etiquetas coloridas por urgência (U vermelho, A laranja, N cinza), ônibus, rota, sentido, quando, fotos; filtros por ônibus, rota, sentido, seção, urgência e período; urgentes no topo.
 - **Resumo**: ranking por problema, por ônibus, por rota, por semana (segunda-feira), % de urgentes e problemas mais frequentes por ônibus.
-- **Exportar CSV** `ifto-monitor_relatos_<periodo>.csv` (UTF-8 com BOM, separador `;`): `data_local`, `onibus`, `rota`, `sentido`, `quando`, `lotacao`, `urgente` (0/1), `n_problemas`, uma coluna 0/1 por id do checklist, `problemas` (rótulos separados por `;`), `comentario`, `n_fotos`.
+- **Exportar CSV** `ifto-monitor_relatos_<periodo>.csv` (UTF-8 com BOM, separador `;`): `data_local`, `onibus`, `rota`, `sentido`, `quando`, `lotacao`, `urgente` (0/1), `n_problemas`, uma coluna 0/1 por id do checklist, `problemas` (rótulos separados por `;`), `comentario`, `n_fotos`, `usuario_nome`, `usuario_email`, `trip_id_curto`, `latitude`, `longitude` (as cinco últimas vazias quando ausentes).
 
 ## Fila offline (app)
 

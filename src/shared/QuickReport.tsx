@@ -8,13 +8,18 @@ export type SendResult = 'enviado' | 'pendente' | 'falhou' | void;
 export interface QuickReportProps {
     buses: string[];
     /** Ônibus pré-marcado (QR `?bus=` ou o último usado). */
-    preset?: { bus?: string };
+    /** Ônibus pré-marcado e, durante uma viagem, rota, `trip` (8 caracteres), `loc` ("lat,lon") e o usuário. */
+    preset?: { bus?: string; route?: string; trip?: string; loc?: string; userEmail?: string; userName?: string };
     /** Abre câmera/galeria e devolve a foto já reduzida (JPEG, 1280 px, ≤ 1 MB). null = cancelou. */
     pickPhoto: () => Promise<Blob | null>;
     /** Envia o relato. Lança Error com mensagem curta em português se for recusado. */
     submit: (form: ReportForm, photos: Blob[], honeypot: string) => Promise<SendResult>;
     onRemember?: (bus: string) => void;
     onOpenMyReports?: () => void;
+    /** Botão "Voltar ao início" na tela de sucesso. */
+    onHome?: () => void;
+    /** Avisa a tela se há algo preenchido (para perguntar "Descartar este relato?" ao voltar). */
+    onDirty?: (dirty: boolean) => void;
 }
 const MAX_PHOTOS = 2;
 
@@ -24,10 +29,13 @@ function Thumb({ blob, onRemove }: { blob: Blob; onRemove: () => void }) {
     return <div className="qrThumb">{url && <img src={url} alt="Foto do relato"/>}<button type="button" className="qrX" aria-label="Remover foto" onClick={onRemove}>X</button></div>;
 }
 
-export function QuickReport({ buses, preset, pickPhoto, submit, onRemember, onOpenMyReports }: QuickReportProps) {
-    const [form, setForm] = useState<ReportForm>(() => ({ ...emptyForm(), bus: preset?.bus ?? '' }));
+export function QuickReport({ buses, preset, pickPhoto, submit, onRemember, onOpenMyReports, onHome, onDirty }: QuickReportProps) {
+    const context = () => ({ bus: preset?.bus ?? '', route: preset?.route ?? '', trip: preset?.trip, loc: preset?.loc, userEmail: preset?.userEmail, userName: preset?.userName });
+    const [form, setForm] = useState<ReportForm>(() => ({ ...emptyForm(), ...context() }));
     const [photos, setPhotos] = useState<Blob[]>([]), [honey, setHoney] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
     const [result, setResult] = useState<SendResult>(), [done, setDone] = useState(false), [describing, setDescribing] = useState(false), [open, setOpen] = useState<string | null>(null);
+    const dirty = form.problems.length > 0 || form.comment.trim() !== '' || photos.length > 0;
+    useEffect(() => { onDirty?.(dirty && !done); }, [dirty, done, onDirty]);
     const busRef = useRef<HTMLFieldSetElement>(null), commonRef = useRef<HTMLFieldSetElement>(null);
     const patch = (p: Partial<ReportForm>) => setForm(f => ({ ...f, ...p }));
     const busOptions = [...new Set([...buses, ...(form.bus && form.bus !== NAO_SEI ? [form.bus] : [])])];
@@ -52,7 +60,7 @@ export function QuickReport({ buses, preset, pickPhoto, submit, onRemember, onOp
         catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível enviar. Tente de novo.'); }
         finally { setBusy(false); }
     };
-    const again = () => { setForm({ ...emptyForm(), bus: form.bus }); setPhotos([]); setHoney(''); setError(''); setResult(undefined); setDescribing(false); setOpen(null); setDone(false); };
+    const again = () => { setForm({ ...emptyForm(), ...context(), bus: form.bus }); setPhotos([]); setHoney(''); setError(''); setResult(undefined); setDescribing(false); setOpen(null); setDone(false); };
 
     if (done) {
         const queued = result === 'pendente', failed = result === 'falhou';
@@ -60,7 +68,7 @@ export function QuickReport({ buses, preset, pickPhoto, submit, onRemember, onOp
             {queued && <p>Sem internet agora. O relato será enviado quando a conexão voltar.</p>}
             {failed && <p>Veja o motivo em “Meus relatos” e toque em Reenviar.</p>}
             <button type="button" className="qrPrimary" onClick={again}>Fazer outro relato</button>
-            {onOpenMyReports && <button type="button" className="qrSecondary" onClick={onOpenMyReports}>Meus relatos</button>}</section>;
+            {onHome && <button type="button" className="qrSecondary" onClick={onHome}>Voltar ao início</button>}{onOpenMyReports && <button type="button" className="qrSecondary" onClick={onOpenMyReports}>Meus relatos</button>}</section>;
     }
     const room = commentRoom(form);
     return <section className="qr">
@@ -79,6 +87,7 @@ export function QuickReport({ buses, preset, pickPhoto, submit, onRemember, onOp
             <button type="button" className="qrAcc" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : section.id)}><span aria-hidden="true">{section.icon}</span><span className="qrAccTitle">{section.title}</span><span className="qrAccInfo">{marked ? `${marked} marcados` : `${section.items.length} itens`}</span></button>
             {isOpen && section.items.map(item => { const on = form.problems.includes(item.id); return <label key={item.id} className={'qrCheck' + (on ? ' on' : '') + (on && item.urgency === 'U' ? ' urgent' : '')}><input type="checkbox" checked={on} onChange={() => toggle(item.id)}/><span>{item.label}</span></label>; })}
         </div>; })}
+        <p className="qrEnd">Fim da lista de problemas</p>
         <label className="qrTrap" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={honey} onChange={e => setHoney(e.target.value)}/></label>
 
         <div className="qrBottom">

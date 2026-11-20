@@ -15,7 +15,7 @@ test('faixa de status fica opaca e fixa durante rolagem de todas as rotas', asyn
         const client = await page.context().newCDPSession(page);
         await client.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 28, bottom: 24, left: 0, right: 0 } });
         // v2.2: pula o primeiro uso (termos, escolha de modo e permissões) para testar o app do monitor.
-        await page.addInitScript(() => { localStorage.setItem('ifto_terms', JSON.stringify({ version: '2.2', accepted_at: '2026-11-20T00:00:00Z' })); localStorage.setItem('ifto_app_mode', 'monitor'); localStorage.setItem('ifto_monitor_setup_done', '1'); });
+        await page.addInitScript(() => { localStorage.setItem('ifto_terms', JSON.stringify({ version: '2.3', accepted_at: '2026-11-20T00:00:00Z' })); localStorage.setItem('ifto_profile', JSON.stringify({ name: 'Teste', email: 't@ifto.edu.br' })); });
         await page.goto('http://127.0.0.1:5198');
         await page.getByRole('heading', { name: 'Entrar com e-mail' }).waitFor();
         expect(await page.locator('.statusBarShield').count()).toBe(1);
@@ -24,8 +24,8 @@ test('faixa de status fica opaca e fixa durante rolagem de todas as rotas', asyn
         expect(await page.locator('.statusBarShield').count()).toBe(1);
         await page.getByRole('button', { name: 'Voltar', exact: true }).click();
         await page.getByRole('button', { name: 'Modo demonstra\u00e7\u00e3o', exact: true }).click();
-        await page.getByRole('heading', { name: 'Ol\u00e1!' }).waitFor();
-        for (const [route, title] of [['/', 'Ol\u00e1!'], ['/trip', 'Viagem'], ['/history', 'Hist\u00f3rico'], ['/history/missing', 'Detalhe da viagem'], ['/settings', 'Ajustes'], ['/consent', 'Termo de ci\u00eancia']]) {
+        await page.getByRole('heading', { name: 'Ol\u00e1, Teste!' }).waitFor();
+        for (const [route, title] of [['/', 'Ol\u00e1, Teste!'], ['/trip', 'Viagem'], ['/history', 'Hist\u00f3rico'], ['/history/missing', 'Detalhe da viagem'], ['/settings', 'Ajustes'], ['/consent', 'Termos de uso e privacidade']]) {
             await page.evaluate(route => { window.location.hash = route; }, route);
             await page.getByRole('heading', { name: title, exact: true }).waitFor();
             await page.evaluate(() => {

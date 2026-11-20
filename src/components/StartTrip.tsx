@@ -3,19 +3,26 @@ import { useEffect, useState } from 'react';
 import type { Monitor } from '../services/monitor';
 import { t } from '../i18n/pt-BR';
 import { RoutePicker } from './Routes';
+import { MonitorSetup } from '../screens/Onboarding';
+import { markTripSetupDone, tripSetupDone } from '../services/profile';
 export function StartTrip({ monitor: m }: { monitor: Monitor }) {
     const s = m.snapshot;
     const vehicleId = s.vehicles.find(v => v.label === s.busLabel)?.id || '';
     const [routeId, setRouteId] = useState<string | null>(null);
-    const [stage, setStage] = useState<'idle' | 'education'>('idle');
+    const [wizard, setWizard] = useState(false);
     useEffect(() => { setRouteId(m.lastRouteForVehicle(vehicleId)); }, [vehicleId, m]);
-    const start = (choice?: boolean) => {
+    const startNow = () => { if (s.busLabel) void m.run(() => m.start(vehicleId, m.needsBackgroundEducation ? true : undefined, routeId)); };
+    // Permissões só aqui: no primeiro "Iniciar viagem" um assistente curto (um botão por etapa). Depois, só a etapa pendente (em m.start).
+    const begin = () => {
         if (!s.busLabel) return;
-        void m.run(() => m.start(vehicleId, choice, routeId));
+        void (async () => {
+            if (!tripSetupDone() && s.mode !== 'demo' && m.permissions.pending(await m.permissions.read())) { setWizard(true); return; }
+            markTripSetupDone(); startNow();
+        })();
     };
+    if (wizard) return <><MonitorSetup permissions={m.permissions} doneLabel={t.start} onDone={() => { markTripSetupDone(); setWizard(false); startNow(); }}/></>;
     return <><BusLabel monitor={m}/>{!s.busLabel && <p>Escolha o ônibus antes de iniciar</p>}
         <RoutePicker monitor={m} value={routeId} onChange={setRouteId}/>
-        <button className="full" disabled={s.busy || !s.busLabel || stage !== 'idle'} onClick={() => { if (m.needsBackgroundEducation) setStage('education'); else start(); }}>{t.start}</button>
-        {stage === 'education' && <section className="card stack" role="dialog" aria-modal="true" aria-label="Gravar com a tela bloqueada"><h3>Gravar com a tela bloqueada</h3><p>Para gravar com a tela bloqueada, permita a localização 'o tempo todo' e as notificações.</p><button onClick={() => { setStage('idle'); start(true); }}>Continuar</button><button className="secondary" onClick={() => { setStage('idle'); start(false); }}>Agora não</button></section>}
+        <button className="bigAction go" disabled={s.busy || !s.busLabel} onClick={begin}>{t.start}</button>
     </>;
 }

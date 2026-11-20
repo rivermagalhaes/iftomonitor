@@ -22,6 +22,7 @@ export function ReportsList({ records, Photos }: { records: ReportRecord[]; Phot
     const select = (k: keyof ReportFilters, label: string, values: [string, string][]) => <label key={k}>{label}<select value={filters[k] || ''} onChange={e => set(k, e.target.value)}><option value="">Todos</option>{values.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
     return <>
         <div className="filters">
+            {select('user', 'Usuário', options(r => r.userEmail).map(v => [v, v]))}
             {select('bus', 'Ônibus', options(r => r.bus).map(v => [v, v]))}
             {select('route', 'Rota', options(r => r.route).map(v => [v, v]))}
             {select('sentido', 'Sentido', [['ida', sentidoLabels.ida], ['volta', sentidoLabels.volta]])}
@@ -34,6 +35,7 @@ export function ReportsList({ records, Photos }: { records: ReportRecord[]; Phot
         <p>{visible.length} relato(s) · {visible.filter(r => r.urgent).length} urgente(s)</p>
         {visible.map(r => <article key={String(r.row.id)} style={r.urgent ? { borderColor: urgencyColors.U, borderWidth: 2 } : undefined}>
             <a href={`#/painel/relatos/${r.row.id}`}>{r.bus} · {r.route} · {new Date(r.at).toLocaleString('pt-BR')}</a>
+            {(r.userEmail || r.userName) && <span> · {r.userName} {r.userEmail}</span>}
             {r.urgent && <strong style={{ color: urgencyColors.U }}> · URGENTE</strong>}
             <div>{r.problems.map(id => <Tag key={id} id={id}/>)}</div>
             {details(r) && <p>{details(r)}</p>}

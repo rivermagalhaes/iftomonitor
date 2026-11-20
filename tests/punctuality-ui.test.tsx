@@ -20,7 +20,8 @@ test('tela Pontualidade: estado vazio, abas e acesso pela navegação', async ()
     render(<App monitor={monitor}/>);
     await waitFor(() => expect(monitor.snapshot.busy).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: 'Modo demonstração' }));
-    fireEvent.click(await screen.findByRole('link', { name: 'Pontualidade' }));
+    fireEvent.click(await screen.findByRole('link', { name: 'Histórico' }));
+    fireEvent.click(await screen.findByRole('tab', { name: 'Relatórios' }));
     expect(await screen.findByRole('heading', { name: 'Pontualidade' })).toBeTruthy();
     expect(screen.getByText('Nenhuma viagem válida no período. Escolha a rota e finalize viagens no horário de turno.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Tabela observada' }));
@@ -52,7 +53,7 @@ test('turno por viagem: override persistido sem apagar dados; aviso de viagem se
     await monitor.start('', undefined, null);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<App monitor={monitor}/>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Encerrar viagem' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Finalizar viagem' }));
     await screen.findByText(/Viagem sem rota não entra no relatório de pontualidade/);
     expect(screen.getByRole('button', { name: 'Ir para a viagem' })).toBeTruthy();
     const trip = monitor.snapshot.trips[0];

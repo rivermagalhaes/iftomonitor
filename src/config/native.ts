@@ -14,13 +14,18 @@ export interface NativeAppApi {
         remove(): Promise<void>;
     }>;
     exitApp(): Promise<void>;
+    minimizeApp?(): Promise<void>;
 }
-export async function bindNativeApp(app: NativeAppApi, isRecording: () => boolean, onAuth: () => Promise<void>) {
-    const back = await app.addListener('backButton', event => { if (event.canGoBack) {
-        history.back();
-        return;
-    } if (!isRecording() || window.confirm(t.closeConfirm))
-        void app.exitApp(); });
+/** `onBack` (v2.3): trata o botão voltar do Android pelas rotas do app; sem ele mantém o comportamento antigo (histórico do navegador/sair). */
+export async function bindNativeApp(app: NativeAppApi, isRecording: () => boolean, onAuth: () => Promise<void>, onBack?: () => void) {
+    const back = await app.addListener('backButton', event => {
+        if (onBack) { onBack(); return; }
+        if (event.canGoBack) {
+            history.back();
+            return;
+        } if (!isRecording() || window.confirm(t.closeConfirm))
+            void app.exitApp();
+    });
     const url = await app.addListener('appUrlOpen', event => { if (event.url.startsWith('br.edu.ifto.monitor://auth/callback'))
         void exchangeCallback(event.url).then(onAuth); });
     return async () => { await back.remove(); await url.remove(); };

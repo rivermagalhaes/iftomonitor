@@ -1,5 +1,4 @@
 import { test, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { categories, validateReport } from '../supabase/functions/_shared/validate';
 import { CHECKLIST_VERSION, canonicalProblems, categoryFor, checklistItems, checklistSections, isUrgent, primaryProblem, sortByUrgency, topUrgency } from '../src/shared/reportChecklist';
 import { MAX_LINE, MAX_TEXT, buildReportText, buildStructuredLine, canAddProblem, canAdvance, commentRoom, defaultSentido, emptyForm, parseStructuredLine, toPayloadFields, validateForm } from '../src/shared/reportForm';
@@ -28,7 +27,7 @@ test('linha estruturada: formato exato e ida e volta de ponta a ponta', () => {
     expect(buildStructuredLine(f)).toBe('[v1|bus=02|rota=Pouso Alegre|sentido=ida|quando=agora|lotacao=cheio|problemas=pneu_furado,sem_cinto,superlotado]');
     const text = buildReportText(f);
     expect(text).toBe('[v1|bus=02|rota=Pouso Alegre|sentido=ida|quando=agora|lotacao=cheio|problemas=pneu_furado,sem_cinto,superlotado] Pneu careca b');
-    expect(parseStructuredLine(text)).toEqual({ version: 1, bus: 'Ônibus 02', route: 'Pouso Alegre', sentido: 'ida', quando: 'agora', lotacao: 'cheio', problems: ['pneu_furado', 'sem_cinto', 'superlotado'], comment: 'Pneu careca b' });
+    expect(parseStructuredLine(text)).toMatchObject({ version: 1, bus: 'Ônibus 02', route: 'Pouso Alegre', sentido: 'ida', quando: 'agora', lotacao: 'cheio', problems: ['pneu_furado', 'sem_cinto', 'superlotado'], comment: 'Pneu careca b' });
     const unknown = parseStructuredLine(buildReportText(form({ bus: 'Não sei', route: 'Não sei', sentido: '', lotacao: '', problems: ['outro'] })));
     expect(unknown).toMatchObject({ bus: 'Não sei', route: 'Não sei', sentido: '', lotacao: '', problems: ['outro'], comment: '' });
 });
@@ -81,21 +80,35 @@ test('ordenação por urgência e categoria do item de maior urgência', () => {
     expect(weekKey('2026-11-20T12:00:00Z')).toBe('2026-11-16');
 });
 test('CSV dos relatos: colunas, BOM, separador ; e uma coluna 0/1 por item', () => {
-    expect(reportCsvColumns).toHaveLength(8 + 51 + 3);
+    expect(reportCsvColumns).toHaveLength(8 + 51 + 3 + 5);
     expect(reportCsvColumns.slice(0, 8)).toEqual(['data_local', 'onibus', 'rota', 'sentido', 'quando', 'lotacao', 'urgente', 'n_problemas']);
-    expect(reportCsvColumns.slice(-3)).toEqual(['problemas', 'comentario', 'n_fotos']);
+    expect(reportCsvColumns.slice(-8)).toEqual(['problemas', 'comentario', 'n_fotos', 'usuario_nome', 'usuario_email', 'trip_id_curto', 'latitude', 'longitude']);
     const csv = reportsCsv([toRecord({ created_at: '2026-11-20T12:00:00Z', photo_count: 2, message: buildReportText(form({ problems: ['freio_problema', 'sem_cinto'], comment: 'a;b' })) })]);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     const [head, line] = csv.slice(1).split('\r\n');
     expect(head.split(';')).toEqual([...reportCsvColumns]);
     expect(line.startsWith('2026-11-20 09:00:00;Ônibus 02;Pouso Alegre;ida;agora;cheio;1;2;')).toBe(true);
     expect(line).toContain('"Problema nos freios; Sem cinto de segurança (ou cinto quebrado)";a;b'.replace('a;b', '"a;b"'));
-    expect(line.endsWith(';2')).toBe(true);
+    expect(line.endsWith(';2;;;;;')).toBe(true);
 });
 test('csvBr: decimais com vírgula e proteção contra fórmulas', () => {
     expect(csvBr(['a', 'b'], [[1.5, '=1+1']])).toBe('﻿a;b\r\n1,5;\'=1+1\r\n');
 });
-test('código do monitor não fica em texto puro no código-fonte', () => {
-    const source = readFileSync('src/config/monitorCode.ts', 'utf8');
-    expect(source).not.toContain('IFTO2026');
+
+test('linha v2.3: usuário, viagem e local; cabe em 500 caracteres sem perder os problemas', () => {
+    const ctx = { userEmail: 'maria@ifto.edu.br', userName: 'Maria Silva', trip: 'ab12cd34', loc: '-10.16735,-48.86950' };
+    const f = form({ ...ctx, route: '', lotacao: '', problems: ['pneu_furado', 'sem_cinto'] });
+    expect(buildStructuredLine(f)).toBe('[v1|u=maria@ifto.edu.br|n=Maria Silva|bus=02|sentido=ida|quando=agora|trip=ab12cd34|loc=-10.16735,-48.86950|problemas=pneu_furado,sem_cinto]');
+    expect(parseStructuredLine(buildReportText({ ...f, comment: 'oi' }))).toMatchObject({ user: 'maria@ifto.edu.br', userName: 'Maria Silva', trip: 'ab12cd34', loc: '-10.16735,-48.86950', comment: 'oi', problems: ['pneu_furado', 'sem_cinto'] });
+    // todos os itens possíveis + comentário enorme: o texto final tem ≤ 500 e todos os problemas marcados continuam na linha
+    let g = form({ ...ctx, problems: [] as string[], comment: 'z'.repeat(900) });
+    for (const item of checklistItems) if (canAddProblem(g, item.id)) g = { ...g, problems: [...g.problems, item.id] };
+    const text = buildReportText(g);
+    expect(text.length).toBeLessThanOrEqual(MAX_TEXT);
+    expect(parseStructuredLine(text)!.problems).toEqual(canonicalProblems(g.problems));
+    expect(() => validateReport({ ...toPayloadFields(g), photos: [] })).not.toThrow();
+    // linha cheia: os campos opcionais cedem lugar, nunca os problemas
+    const line = buildStructuredLine(g);
+    expect(line.length).toBeLessThanOrEqual(MAX_LINE);
+    expect(line.startsWith('[v1|')).toBe(true);
 });
