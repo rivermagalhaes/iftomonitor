@@ -27,6 +27,10 @@ Quem só relata nunca é incomodado. No **primeiro** "Iniciar viagem" abre um as
 - Botão voltar do Android: cada tela pode tratar (formulário com dados pergunta "Descartar"); senão vai à tela pai (Relatar/Histórico/Ajustes/Viagem → Início; detalhe da viagem → Histórico; Rotas e Termos → Ajustes); no **Início minimiza o app** sem encerrar a gravação (`src/app/backHandler.ts`).
 - A tela antiga de login ("Entrar com e-mail", Google, "Modo demonstração", "Modo campo local") está desativada por `AUTH_LOGIN_ENABLED = false` (`src/config/auth.ts`); o código fica no projeto. O app entra sozinho no modo campo local interno.
 
+## Acompanhamento ao vivo
+
+Durante a viagem o app envia a posição a cada ~15 s (com internet); o administrador acompanha em `#/painel/ao-vivo` (ver `docs/AO_VIVO.md`). Nenhuma tela nova para quem usa o app.
+
 ## Migração (celulares que já usavam o app)
 
 Todos os dados locais ficam (viagens, pontos, paradas, eventos, CSVs, nuvem). Só é preciso aceitar os termos novos e fazer o cadastro uma vez. As chaves antigas de modo e de código são ignoradas.

@@ -11,7 +11,8 @@ import { t } from '../i18n/pt-BR';
 import { AUTH_LOGIN_ENABLED } from '../config/auth';
 import { MonitorPermissions } from './monitorPermissions';
 import { getSupabase, exchangeCallback, signInEmail, signInGoogle } from './auth';
-import { cloudWriter, syncCloud } from './cloudSync';
+import { cloudWriter, syncCloud, syncLive } from './cloudSync';
+import { LIVE_INTERVAL_MS } from '../shared/liveTrip';
 import { cloneReference, defaultReference, mergeReference, validateReference, type ReferenceConfig } from '../config/reference';
 import type { ShiftOverride } from '../lib/punctuality';
 
@@ -49,6 +50,7 @@ export class Monitor {
     provider: LocationProvider | null = null;
     private userId: string | null = null;
     private watchdogTimer: ReturnType<typeof setInterval> | null = null;
+    private liveTimer: ReturnType<typeof setInterval> | null = null;
     private reconnectTask: Promise<void> | null = null;
     private restartedTrips = new Set<string>();
     private syncTimer: ReturnType<typeof setTimeout> | null = null;
@@ -96,6 +98,8 @@ export class Monitor {
             if (!active.paused) { await this.resume(); await this.checkRecording('app_restarted'); } else this.patch({ recovery: false });
         }
         if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+        if (this.liveTimer) clearInterval(this.liveTimer);
+        if (mode !== 'demo') this.liveTimer = setInterval(() => { void this.syncLiveNow().catch(() => { }); }, LIVE_INTERVAL_MS);
         if (mode !== 'demo') this.watchdogTimer = setInterval(() => { if (!this.snapshot.busy) void this.checkRecording().catch(error => this.patch({ error: String(error) })); }, 15000);
         void this.sync().catch(() => { }); }
     async restore() { const mode = localStorage.getItem('ifto_mode'); if ((mode === 'demo' && AUTH_LOGIN_ENABLED) || mode === 'field' && allowLocalFieldMode()) {
@@ -257,6 +261,11 @@ export class Monitor {
         });
         await this.enter('demo');
     }
-    async dispose() { if (this.watchdogTimer) clearInterval(this.watchdogTimer); this.watchdogTimer = null; if (this.syncTimer)
+    /** Posição ao vivo: envia os pontos novos da viagem em andamento quando há internet (sem novo GPS). */
+    async syncLiveNow() {
+        if (!this.repository || !this.service?.active) return 0;
+        return syncLive(this.repository, cloudWriter(), () => this.cloudEnabled && this.snapshot.online && this.snapshot.mode !== 'demo' && !!this.service?.active);
+    }
+    async dispose() { if (this.watchdogTimer) clearInterval(this.watchdogTimer); this.watchdogTimer = null; if (this.liveTimer) clearInterval(this.liveTimer); this.liveTimer = null; if (this.syncTimer)
         clearTimeout(this.syncTimer); await this.service?.dispose(); await this.repository?.close(); }
 }

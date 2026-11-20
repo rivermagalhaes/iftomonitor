@@ -38,7 +38,7 @@ export function Home({ monitor: m }: {
         <button className="bigAction go" onClick={() => navigate('/trip')}>{s.active ? 'Viagem em andamento' : t.start}</button>
         <button className="bigAction report" onClick={() => navigate('/report')}>Relatar problema</button>
         <p className="muted">{last ? `Última viagem: ${last.bus_label || last.vehicle_label_snapshot} · ${dateTime(last.started_at)}` : 'Nenhuma viagem ainda.'}</p>
-        <p className="muted">{configured ? (unsynced ? `${unsynced} pendente(s) de envio` : 'Tudo enviado') : t.savedLocal}</p>
+        {!configured && <p className="muted">{t.savedLocal}</p>}
         <button className="secondary full" disabled={!configured || s.mode === 'demo' || s.busy} onClick={() => void m.run(() => m.sync(true))}>{!configured && s.mode !== 'demo' ? t.cloudMissing : 'Sincronizar agora'}</button>
         {s.mode === 'demo' && <p className="muted">{t.demoNoSync}</p>}
         <p role="status">{!configured ? t.cloudMissing : !m.cloudEnabled ? 'Nuvem desligada' : !s.online ? 'Sem internet' : s.trips.some(t => t.sync_status === 'error' && !t.synced_at) ? 'Erro ao enviar (tentar de novo)' : unsynced ? `${unsynced} viagens pendentes` : `Tudo sincronizado ${m.lastCloudSync ? new Date(m.lastCloudSync).toLocaleString('pt-BR') : ''}`}</p>
@@ -54,12 +54,13 @@ export function TripScreen({ monitor: m }: {
     const s = m.snapshot, active = s.active, navigate = useNavigate();
     const points = s.points.filter(p => p.trip_id === active?.id), stops = s.stops.filter(p => p.trip_id === active?.id);
     const last = points.at(-1);
-    return <><ScreenHeader onBack={() => navigate('/')}/><h2>{t.trip}</h2><p><strong>{active?.bus_label || active?.vehicle_label_snapshot || s.busLabel || "Ônibus não definido"}</strong></p><RecordingReadiness monitor={m}/>{!active ? <StartTrip monitor={m}/> : <>
+    return <><ScreenHeader onBack={() => navigate('/')}/><h2>{t.trip}</h2>{!active ? <><p><strong>{s.busLabel || "Ônibus não definido"}</strong></p><RecordingReadiness monitor={m}/><StartTrip monitor={m}/></> : <>
         <div className="card"><h3>{active.bus_label || active.vehicle_label_snapshot}{active.route_name ? ' · ' + active.route_name : ''}</h3>{!active.route_name && <p className="muted">Sem rota</p>}<RecordingGpsState monitor={m}/>
             <div className="row between"><strong>{elapsed(active.started_at)}</strong><span className="badge">{s.gps === 'ok' ? t.signalOk : s.gps === 'low' ? t.lowAccuracy : s.gps === 'waiting' ? t.waiting : s.gps === 'denied' ? t.permissionDenied : t.noSignal}</span></div>
             <p>{points.length} {t.gpsPoints} · {stops.filter(s => s.status !== 'descartada').length} {t.stops}</p><p className="muted">{t.accuracy}: {last ? Math.round(last.accuracy_m) + ' m' : '—'}</p>
-        </div><Speedometer points={points}/><TripRouteEditor monitor={m} trip={active}/><TripMap points={points} stops={stops} online={s.online} intervalMs={active.gps_interval_ms || s.settings.gpsIntervalMs}/>
-        <div className="row card"><button disabled={s.busy} onClick={() => void m.run(() => active.paused ? m.resume() : m.pause())}>{active.paused ? 'Retomar gravação' : 'Pausar gravação'}</button><button disabled={s.busy} onClick={() => void m.run(() => m.manual())}>{t.manual}</button><button className="bigAction report" onClick={() => navigate('/report')}>Relatar problema</button>{s.mode === 'demo' && <button className="secondary" onClick={() => m.simulateStop()}>{t.simulatedStop}</button>}</div><Stops monitor={m} tripId={active.id}/>
+        </div><Speedometer points={points}/>
+        <div className="row card"><button disabled={s.busy} onClick={() => void m.run(() => active.paused ? m.resume() : m.pause())}>{active.paused ? 'Retomar gravação' : 'Pausar gravação'}</button><button disabled={s.busy} onClick={() => void m.run(() => m.manual())}>{t.manual}</button><button className="reportBtn" onClick={() => navigate('/report')}>Relatar problema</button>{s.mode === 'demo' && <button className="secondary" onClick={() => m.simulateStop()}>{t.simulatedStop}</button>}</div><Stops monitor={m} tripId={active.id}/>
+        <RecordingReadiness monitor={m}/><TripRouteEditor monitor={m} trip={active}/><TripMap points={points} stops={stops} online={s.online} intervalMs={active.gps_interval_ms || s.settings.gpsIntervalMs}/>
     </>}</>;
 }
 export function Stops({ monitor: m, tripId }: {

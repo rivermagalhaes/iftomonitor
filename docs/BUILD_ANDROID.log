@@ -34,9 +34,9 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capacitor-share:preBuild UP-TO-DATE
 > Task :capacitor-share:preDebugBuild UP-TO-DATE
 > Task :capacitor-share:writeDebugAarMetadata UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeDebugAarMetadata
 > Task :capgo-background-geolocation:preBuild UP-TO-DATE
 > Task :capgo-background-geolocation:preDebugBuild UP-TO-DATE
-> Task :capacitor-cordova-android-plugins:writeDebugAarMetadata
 > Task :capgo-background-geolocation:writeDebugAarMetadata UP-TO-DATE
 > Task :app:checkDebugAarMetadata UP-TO-DATE
 > Task :capacitor-android:processDebugNavigationResources UP-TO-DATE
@@ -83,7 +83,7 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :app:mergeDebugResources UP-TO-DATE
 > Task :app:packageDebugResources UP-TO-DATE
 > Task :app:parseDebugLocalResources UP-TO-DATE
-> Task :app:createDebugCompatibleScreenManifests
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
 > Task :app:extractDeepLinksDebug UP-TO-DATE
 > Task :capacitor-android:extractDeepLinksDebug UP-TO-DATE
 > Task :capacitor-android:processDebugManifest UP-TO-DATE
@@ -114,9 +114,9 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capacitor-cordova-android-plugins:compileDebugLibraryResources
 > Task :capacitor-cordova-android-plugins:processDebugManifest
 > Task :capacitor-cordova-android-plugins:parseDebugLocalResources
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
-> Task :app:processDebugManifestForPackage
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
 > Task :capacitor-filesystem:compileDebugLibraryResources UP-TO-DATE
 > Task :capacitor-filesystem:parseDebugLocalResources UP-TO-DATE
 > Task :capacitor-filesystem:generateDebugRFile UP-TO-DATE
@@ -127,12 +127,13 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capacitor-network:parseDebugLocalResources UP-TO-DATE
 > Task :capacitor-network:generateDebugRFile UP-TO-DATE
 > Task :capacitor-share:compileDebugLibraryResources UP-TO-DATE
-> Task :capacitor-cordova-android-plugins:generateDebugRFile
 > Task :capacitor-share:parseDebugLocalResources UP-TO-DATE
 > Task :capacitor-share:generateDebugRFile UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateDebugRFile
 > Task :capgo-background-geolocation:compileDebugLibraryResources UP-TO-DATE
 > Task :capgo-background-geolocation:parseDebugLocalResources UP-TO-DATE
 > Task :capgo-background-geolocation:generateDebugRFile UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
 > Task :capacitor-android:javaPreCompileDebug UP-TO-DATE
 > Task :capacitor-android:compileDebugJavaWithJavac UP-TO-DATE
 > Task :capacitor-android:bundleLibCompileToJarDebug UP-TO-DATE
@@ -144,15 +145,15 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capacitor-camera:javaPreCompileDebug UP-TO-DATE
 > Task :capacitor-camera:compileDebugJavaWithJavac UP-TO-DATE
 > Task :capacitor-camera:bundleLibCompileToJarDebug UP-TO-DATE
-> Task :capacitor-cordova-android-plugins:javaPreCompileDebug
-> Task :capacitor-cordova-android-plugins:compileDebugJavaWithJavac NO-SOURCE
-> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarDebug
 > Task :capacitor-filesystem:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :capacitor-cordova-android-plugins:javaPreCompileDebug
 > Task :capacitor-filesystem:compileDebugKotlin UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:compileDebugJavaWithJavac NO-SOURCE
 > Task :capacitor-filesystem:javaPreCompileDebug UP-TO-DATE
 > Task :capacitor-filesystem:compileDebugJavaWithJavac NO-SOURCE
 > Task :capacitor-filesystem:bundleLibCompileToJarDebug UP-TO-DATE
 > Task :capacitor-geolocation:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarDebug
 > Task :capacitor-geolocation:compileDebugKotlin UP-TO-DATE
 > Task :capacitor-geolocation:javaPreCompileDebug UP-TO-DATE
 > Task :capacitor-geolocation:compileDebugJavaWithJavac NO-SOURCE
@@ -167,6 +168,7 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capgo-background-geolocation:javaPreCompileDebug UP-TO-DATE
 > Task :capgo-background-geolocation:compileDebugJavaWithJavac UP-TO-DATE
 > Task :capgo-background-geolocation:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
 > Task :app:mergeDebugShaders UP-TO-DATE
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
@@ -206,16 +208,14 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capgo-background-geolocation:compileDebugShaders NO-SOURCE
 > Task :capgo-background-geolocation:generateDebugAssets UP-TO-DATE
 > Task :capgo-background-geolocation:mergeDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets
-> Task :app:processDebugResources
-> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
 > Task :capacitor-app:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-camera:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-filesystem:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-geolocation:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-network:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-share:bundleLibRuntimeToJarDebug UP-TO-DATE
-> Task :app:compressDebugAssets
 > Task :capgo-background-geolocation:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-android:bundleLibRuntimeToJarDebug UP-TO-DATE
 > Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarDebug
@@ -279,6 +279,9 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :app:validateSigningDebug UP-TO-DATE
 > Task :app:writeDebugAppMetadata UP-TO-DATE
 > Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:packageDebug UP-TO-DATE
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug UP-TO-DATE
 > Task :capacitor-android:checkDebugAarMetadata UP-TO-DATE
 > Task :capacitor-android:stripDebugDebugSymbols NO-SOURCE
 > Task :capacitor-android:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
@@ -318,19 +321,15 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capacitor-camera:syncDebugLibJars UP-TO-DATE
 > Task :capacitor-camera:bundleDebugAar UP-TO-DATE
 > Task :capacitor-camera:assembleDebug UP-TO-DATE
-> Task :capacitor-cordova-android-plugins:checkDebugAarMetadata
 > Task :capacitor-cordova-android-plugins:stripDebugDebugSymbols NO-SOURCE
 > Task :capacitor-cordova-android-plugins:copyDebugJniLibsProjectAndLocalJars
+> Task :capacitor-cordova-android-plugins:checkDebugAarMetadata
 > Task :capacitor-cordova-android-plugins:extractDebugAnnotations
 > Task :capacitor-cordova-android-plugins:extractDeepLinksForAarDebug UP-TO-DATE
 > Task :capacitor-cordova-android-plugins:mergeDebugGeneratedProguardFiles UP-TO-DATE
 > Task :capacitor-cordova-android-plugins:mergeDebugConsumerProguardFiles UP-TO-DATE
 > Task :capacitor-cordova-android-plugins:prepareDebugArtProfile UP-TO-DATE
 > Task :capacitor-cordova-android-plugins:prepareLintJarForPublish UP-TO-DATE
-> Task :capacitor-cordova-android-plugins:mergeDebugJavaResource
-> Task :capacitor-cordova-android-plugins:syncDebugLibJars
-> Task :capacitor-cordova-android-plugins:bundleDebugAar
-> Task :capacitor-cordova-android-plugins:assembleDebug
 > Task :capacitor-filesystem:checkDebugAarMetadata UP-TO-DATE
 > Task :capacitor-filesystem:stripDebugDebugSymbols NO-SOURCE
 > Task :capacitor-filesystem:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
@@ -344,16 +343,17 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capacitor-filesystem:syncDebugLibJars UP-TO-DATE
 > Task :capacitor-filesystem:bundleDebugAar UP-TO-DATE
 > Task :capacitor-filesystem:assembleDebug UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeDebugJavaResource
 > Task :capacitor-geolocation:checkDebugAarMetadata UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:syncDebugLibJars
+> Task :capacitor-cordova-android-plugins:bundleDebugAar
+> Task :capacitor-cordova-android-plugins:assembleDebug
 > Task :capacitor-geolocation:stripDebugDebugSymbols NO-SOURCE
 > Task :capacitor-geolocation:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
 > Task :capacitor-geolocation:extractDebugAnnotations UP-TO-DATE
 > Task :capacitor-geolocation:extractDeepLinksForAarDebug UP-TO-DATE
 > Task :capacitor-geolocation:mergeDebugGeneratedProguardFiles UP-TO-DATE
 > Task :capacitor-geolocation:mergeDebugConsumerProguardFiles UP-TO-DATE
-> Task :app:packageDebug
-> Task :app:createDebugApkListingFileRedirect
-> Task :app:assembleDebug
 > Task :capacitor-geolocation:prepareDebugArtProfile UP-TO-DATE
 > Task :capacitor-geolocation:prepareLintJarForPublish UP-TO-DATE
 > Task :capacitor-geolocation:mergeDebugJavaResource UP-TO-DATE
@@ -400,5 +400,5 @@ WARNING: Using flatDir should be avoided because it doesn't support any meta-dat
 > Task :capgo-background-geolocation:bundleDebugAar UP-TO-DATE
 > Task :capgo-background-geolocation:assembleDebug UP-TO-DATE
 
-BUILD SUCCESSFUL in 1m 9s
-310 actionable tasks: 33 executed, 277 up-to-date
+BUILD SUCCESSFUL in 20s
+310 actionable tasks: 24 executed, 286 up-to-date

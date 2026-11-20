@@ -3,6 +3,7 @@ import type { Repository } from '../data/repository';
 import type { Trip, GpsPoint, Stop } from '../data/models';
 import { analyzeTrack } from '../lib/geo';
 import { backoff } from '../sync/sync';
+import { LIVE_BATCH, LIVE_MAX_BATCHES, LIVE_STATUS, liveTripId } from '../shared/liveTrip';
 export type CloudRow = Record<string, unknown>;
 export interface CloudWriter { insert(table: string, rows: CloudRow[]): Promise<{ error: { code?: string; message?: string; status?: number } | null; status?: number }> }
 export const duplicate = (error: {code?: string; status?: number}, status?: number) => error.code === '23505' || error.status === 409 || status === 409;
@@ -20,7 +21,7 @@ export function cloudPayload(trip: Trip, points: GpsPoint[], stops: Stop[]) {
  const track = analyzeTrack(points,trip.gps_interval_ms);
  const pick = (row: object, keys: string[]) => Object.fromEntries(keys.map(k=>[k,(row as CloudRow)[k] ?? null]));
  return {
- trips: [{...pick(trip,['id','device_id','app_version','status']), bus_label: trip.bus_label || trip.vehicle_label_snapshot, route_name: trip.route_name || null, started_at: new Date(trip.started_at).toISOString(), ended_at: new Date(trip.ended_at!).toISOString(), distance_m: track.distance, duration_s: Math.round((Date.parse(trip.ended_at!)-Date.parse(trip.started_at))/1000), points_count: points.length, stops_count: stops.filter(s=>s.status!=='descartada').length, gap_count: track.gaps.length, gap_total_s: track.gapSeconds, extra: {user: trip.user ?? null, local:trip, point_metadata:points.map(p=>pick(p,['id','received_at','device_id'])), stop_metadata:stops.map(s=>pick(s,['id','avg_accuracy_m','manually_confirmed','created_at','updated_at']))}}],
+ trips: [{...pick(trip,['id','device_id','app_version','status']), bus_label: trip.bus_label || trip.vehicle_label_snapshot, route_name: trip.route_name || null, started_at: new Date(trip.started_at).toISOString(), ended_at: new Date(trip.ended_at!).toISOString(), distance_m: track.distance, duration_s: Math.round((Date.parse(trip.ended_at!)-Date.parse(trip.started_at))/1000), points_count: points.length, stops_count: stops.filter(s=>s.status!=='descartada').length, gap_count: track.gaps.length, gap_total_s: track.gapSeconds, extra: {user: trip.user ?? null, live_id: liveTripId(trip.id), local:trip, point_metadata:points.map(p=>pick(p,['id','received_at','device_id'])), stop_metadata:stops.map(s=>pick(s,['id','avg_accuracy_m','manually_confirmed','created_at','updated_at']))}}],
  trip_points: points.map(p=>({...pick(track.annotated.get(p.id)||p,['trip_id','seq','latitude','longitude','accuracy_m','speed_mps','accepted','source','gap_before_s','suspect']),recorded_at:new Date(p.recorded_at).toISOString()})),
  trip_stops: stops.map(s=>({...pick(s,['id','trip_id','latitude','longitude','status','label','detected_by']),duration_s:Math.round(s.duration_s),arrived_at:new Date(s.arrived_at).toISOString(),departed_at:s.departed_at?new Date(s.departed_at).toISOString():null})),
  trip_events: (trip.events||[]).map(e=>({trip_id:trip.id,event_type:e.type,occurred_at:new Date(e.at).toISOString(),detail:e.details,app_version:trip.app_version})) };
@@ -50,4 +51,35 @@ export async function syncCloud(repo: Repository, writer: CloudWriter | null, al
  await repo.put('app_meta',{key:'last_cloud_sync',value:stamp});
  } catch(e) { const current=await repo.get('trips',trip.id); if(current) {const attempts=current.sync_attempts+1;await repo.put('trips',{...current,sync_status:'error',sync_attempts:attempts,last_error:e instanceof Error?e.message:String(e),next_retry_at:new Date(now()+backoff(attempts)).toISOString()});} }
  } } finally {locks.delete(repo);}
+}
+
+const liveLocks = new WeakSet<Repository>();
+export const liveStateKey = (tripId: string) => `live_sync_${tripId}`;
+/** Envia os pontos novos da viagem em andamento (idempotente: guarda a última seq enviada; duplicados são ignorados). */
+export async function syncLive(repo: Repository, writer: CloudWriter | null, allowed: () => boolean): Promise<number> {
+ if (!writer || liveLocks.has(repo) || !allowed() || repo.name.includes('demo')) return 0;
+ liveLocks.add(repo);
+ let sent = 0;
+ try {
+  const trip = (await repo.all('trips')).find(t => t.status === 'recording');
+  if (!trip) return 0;
+  const key = liveStateKey(trip.id);
+  let state: { row: boolean; seq: number } = { row: false, seq: 0 };
+  try { const saved = await repo.get('app_meta', key); if (saved) state = { ...state, ...JSON.parse(saved.value) }; } catch { /* recomeça */ }
+  const liveId = liveTripId(trip.id);
+  const points = (await repo.all('gps_points')).filter(p => p.trip_id === trip.id && p.seq > state.seq).sort((a, b) => a.seq - b.seq);
+  if (!points.length && state.row) return 0;
+  if (!state.row) {
+   await insertSafe(writer, 'trips', [{ id: liveId, bus_label: trip.bus_label || trip.vehicle_label_snapshot, route_name: trip.route_name || null, device_id: trip.device_id, app_version: trip.app_version ?? null, started_at: new Date(trip.started_at).toISOString(), ended_at: null, status: LIVE_STATUS, extra: { live_of: trip.id, user: trip.user ?? null } }]);
+   state.row = true; await repo.put('app_meta', { key, value: JSON.stringify(state) });
+  }
+  for (let batch = 0; batch < LIVE_MAX_BATCHES && points.length; batch++) {
+   if (!allowed()) break;
+   const chunk = points.splice(0, LIVE_BATCH);
+   await insertSafe(writer, 'trip_points', chunk.map(p => ({ trip_id: liveId, seq: p.seq, recorded_at: new Date(p.recorded_at).toISOString(), latitude: p.latitude, longitude: p.longitude, accuracy_m: p.accuracy_m, speed_mps: p.speed_mps, accepted: p.accepted, source: p.source })));
+   state.seq = chunk[chunk.length - 1].seq; sent += chunk.length;
+   await repo.put('app_meta', { key, value: JSON.stringify(state) });
+  }
+ } finally { liveLocks.delete(repo); }
+ return sent;
 }

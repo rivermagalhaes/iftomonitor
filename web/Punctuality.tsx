@@ -32,7 +32,7 @@ export function PunctualityPanel({ db }: { db: WebClient | null }) {
             const since = period === 'all' ? null : new Date(periodStartMs(period, Date.now())).toISOString();
             setProgress('Carregando viagens…');
             const trips = await paged<PunctTrip>((from, to) => {
-                let q = db.from('trips').select(tripCols).order('started_at', { ascending: false }).range(from, to);
+                let q = db.from('trips').select(tripCols).order('started_at', { ascending: false }).range(from, to).or('status.is.null,status.neq.live'); // esconde as viagens \"sombra\" do ao vivo
                 if (since) q = q.gte('started_at', since);
                 return q as unknown as PromiseLike<Rows<PunctTrip>>;
             });

@@ -56,3 +56,10 @@
 - Envio de relato: contrato único em `src/shared/reportContract.ts` (função `submit-report`, ações `create`/`finalize`, limites), usado pelo app e pela página web; teste valida a ação e o payload contra as regras da função. "Meus relatos" mostra o texto real do campo `error` do servidor; 4xx não reenvia sozinho; relatos "Falhou" antigos são reenviados reconstruindo o payload do que está salvo.
 - **Causa do 400 (não é do cliente)**: o banco publicado NÃO tem a migração `supabase/migrations/20261117130000_ifto_monitor_cloud_fix.sql` (coluna `reports.finalize_token` e função `consume_report_rate`); a função devolve 400 "Não foi possível enviar" para qualquer falha interna. Aplicar a migração no projeto resolve; a função e o SQL não foram alterados aqui.
 - Android versionName 2.3.1, versionCode 23001.
+
+## 2.4.0 - 2026-11-20
+
+- **Ao vivo**: envio da posição a cada ~15 s durante a viagem (`syncLive`, idempotente por seq, lotes de 100, até 5 por rodada) e nova aba **Ao vivo** no painel (mapa Leaflet/OSM, velocidade colorida, "sem sinal" após 2 min, rastro de 30 min, atualização a cada 10 s). Como o celular só pode INSERIR, a viagem em andamento vai como viagem "sombra" (`status live`); a viagem real segue sendo enviada ao finalizar, com `extra.live_id`. Ver `docs/AO_VIVO.md`.
+- Pontualidade, Velocidade e Visão geral ignoram viagens `live`.
+- Limpezas: removido o chip "Modo campo local" e o texto duplicado "Tudo enviado"; uma única mensagem de sincronização. Tela Viagem em andamento: velocímetro, "Relatar problema" e "Finalizar viagem" antes do mapa (sem rolar).
+- Android versionName 2.4.0, versionCode 24000.
