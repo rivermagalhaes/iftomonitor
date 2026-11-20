@@ -10,10 +10,23 @@ export const categoryLabels: Record<Category, string> = { atraso: 'Atraso', queb
 export const BUS_CHIPS = ['Ônibus 01', 'Ônibus 02', 'Ônibus 03'] as const;
 export const MAX_MESSAGE = 500, MAX_PHOTOS = 2;
 export type ReportStatus = 'pendente' | 'enviado' | 'falhou';
-export interface StoredReport { id: string; created_at: string; bus_label: string; route_name?: string; category: Category; message: string; photos: Blob[]; status: ReportStatus; error?: string; sent_at?: string }
+export interface StoredReport { id: string; created_at: string; bus_label: string; route_name?: string; category: Category; message: string; photos: Blob[]; status: ReportStatus; error?: string; sent_at?: string; http_status?: number }
 export interface ReportDraft { bus_label: string; route_name?: string; category: string; message: string; photos: Blob[]; honeypot?: string }
 export class NetworkError extends Error { constructor(message = 'Sem conexão. O relato será enviado quando a internet voltar.') { super(message); } }
-export class ReportRejected extends Error { }
+export class ReportRejected extends Error { constructor(message: string, public status?: number) { super(message); } }
+/** Mensagem curta e acionável para a resposta de erro da Edge Function `submit-report` (4xx). */
+export function friendlyServerError(status: number, serverMessage: unknown): string {
+    const msg = typeof serverMessage === 'string' ? serverMessage : '';
+    if (status === 429) return 'Limite diário de relatos atingido. Tente amanhã.';
+    if (/Texto/.test(msg)) return 'Texto inválido: não use os símbolos < e > e fique em até 500 caracteres.';
+    if (/Fotos/.test(msg)) return 'Fotos inválidas: use até 2 fotos de até 1 MB.';
+    if (/Categoria/.test(msg)) return 'Tipo de problema inválido. Marque os itens de novo.';
+    if (/Escreva/.test(msg)) return 'Marque um problema, escreva ou envie uma foto.';
+    if (/Envio inv/.test(msg) || status === 403) return 'O servidor recusou este envio. Tente de novo; se repetir, avise a equipe do projeto.';
+    if (status === 401) return 'Envio não autorizado: a chave da nuvem deste aplicativo está incorreta.';
+    if (status === 400) return 'O servidor recusou o relato (erro 400 sem detalhe). Provável problema de configuração da nuvem; avise a equipe do projeto.';
+    return `O servidor recusou o relato (erro ${status}).`;
+}
 
 export interface ReportStore { all(): Promise<StoredReport[]>; put(report: StoredReport): Promise<void> }
 export class MemoryReportStore implements ReportStore {
@@ -36,13 +49,13 @@ export function httpTransport(
     upload?: (path: string, token: string, blob: Blob) => Promise<void>,
 ): ReportTransport {
     const call = async (body: Record<string, unknown>) => {
-        if (!env.url || !env.key) throw new ReportRejected('Envio indisponível: a nuvem não está configurada neste aplicativo.');
+        if (!env.url || !env.key) throw new ReportRejected('Envio indisponível: a nuvem não está configurada neste aplicativo.', 0);
         let response: Response;
         try { response = await fetchFn(`${env.url.replace(/\/$/, '')}/functions/v1/submit-report`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: env.key, Authorization: `Bearer ${env.key}` }, body: JSON.stringify(body) }); }
         catch { throw new NetworkError(); }
         if (response.status >= 500 || response.status === 408) throw new NetworkError('Serviço indisponível no momento. Tentaremos de novo.');
         const data = await response.json().catch(() => ({})) as Record<string, unknown>;
-        if (!response.ok) throw new ReportRejected(response.status === 429 ? 'Limite diário atingido. Tente amanhã.' : String(data.error || 'Não foi possível enviar.'));
+        if (!response.ok) throw new ReportRejected(friendlyServerError(response.status, data.error), response.status);
         return data as unknown as CreateResult;
     };
     const put = upload ?? (async (path: string, token: string, blob: Blob) => {
@@ -101,7 +114,7 @@ export class ReportQueue {
         try { await this.transport.send(report); await this.store.put({ ...report, status: 'enviado', error: undefined, sent_at: new Date().toISOString() }); }
         catch (e) {
             if (e instanceof NetworkError) await this.store.put({ ...report, status: 'pendente', error: e.message });
-            else await this.store.put({ ...report, status: 'falhou', error: e instanceof Error ? e.message : 'Não foi possível enviar.' });
+            else await this.store.put({ ...report, status: 'falhou', http_status: e instanceof ReportRejected ? e.status : undefined, error: e instanceof Error ? e.message : 'Não foi possível enviar.' });
         }
         await this.reload();
     }
@@ -114,7 +127,7 @@ export class ReportQueue {
     async resend(id: string) {
         const report = (await this.store.all()).find(r => r.id === id);
         if (!report || report.status === 'enviado') return;
-        await this.store.put({ ...report, status: 'pendente', error: undefined }); await this.reload();
+        await this.store.put({ ...report, status: 'pendente', error: undefined, http_status: undefined }); await this.reload();
         await this.attempt(id);
     }
 }

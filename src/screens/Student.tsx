@@ -47,7 +47,7 @@ export function MyReportsScreen({ queue }: { queue: ReportQueue }) {
 function ReportDetail({ report, queue, onBack }: { report: StoredReport; queue: ReportQueue; onBack: () => void }) {
     const [busy, setBusy] = useState(false);
     return <section className="stack"><button className="link" onClick={onBack}>Voltar</button><h2>Relato</h2>
-        <div className="card"><p><strong>{report.bus_label}</strong>{report.route_name ? ' · ' + report.route_name : ''}</p><p>{summary(report)}</p><p>{when(report.created_at)}</p><p>Status: <span className="badge">{statusLabel[report.status]}</span></p>{comment(report) && <p>{comment(report)}</p>}<p className="muted">Fotos: {report.photos.length}</p>{report.error && report.status !== 'enviado' && <p role="alert" className="error">{report.error}</p>}</div>
+        <div className="card"><p><strong>{report.bus_label}</strong>{report.route_name ? ' · ' + report.route_name : ''}</p><p>{summary(report)}</p><p>{when(report.created_at)}</p><p>Status: <span className="badge">{statusLabel[report.status]}</span></p>{comment(report) && <p>{comment(report)}</p>}<p className="muted">Fotos: {report.photos.length}</p>{report.error && report.status !== 'enviado' && <p role="alert" className="error">{report.error}{report.http_status ? ` (HTTP ${report.http_status})` : ''}</p>}</div>
         {report.status !== 'enviado' && <button disabled={busy} onClick={() => { setBusy(true); void queue.resend(report.id).finally(() => setBusy(false)); }}>Reenviar</button>}</section>;
 }
 

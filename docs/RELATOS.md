@@ -12,7 +12,16 @@ Automáticos: data/hora, sentido (ida antes do meio-dia, volta depois), `quando=
 
 ## Contrato com a nuvem (inalterado)
 
-Edge Function `submit-report` (`create` → envio das fotos → `finalize`). Campos: `bus_label`, `route_name`, `category`, `message` (≤ 500 caracteres), `photos` (≤ 2, ≤ 1 MB, JPEG/PNG/WebP), `honeypot` vazio. A coluna `category` aceita só 8 valores (`atraso`, `quebra`, `superlotacao`, `parada_nao_feita`, `desvio`, `limpeza_conservacao`, `seguranca`, `outro`).
+Edge Function `submit-report`, duas chamadas `POST` em `/functions/v1/submit-report` (headers `apikey`, `Authorization: Bearer <chave>`, `Content-Type: application/json`):
+
+1. `{ action: "create", bus_label, route_name, category, message, photos: [{mime_type, size_bytes}], honeypot: "" }` → `{ report_id, finalize_token, uploads: [{path, token}] }`.
+2. Upload de cada foto na URL assinada (`ifto-reports`), depois `{ action: "finalize", report_id, finalize_token, paths }`.
+
+Regras de `validateReport` (`supabase/functions/_shared/validate.ts`): `bus_label` 1–60 caracteres; `route_name` ≤ 80; `message` ≤ 500; textos sem `<` nem `>`; `category` ∈ {`atraso`, `quebra`, `superlotacao`, `parada_nao_feita`, `desvio`, `limpeza_conservacao`, `seguranca`, `outro`}; ≤ 2 fotos, `image/jpeg|png|webp`, 1 byte–1 MB; precisa de texto ou foto; `honeypot` vazio. A tabela ainda exige `message` ≤ 500 e texto ou foto (`reports_text_or_photo`).
+
+**Atenção ao erro 400**: a função devolve **400 "Não foi possível enviar"** para qualquer falha que não seja de validação (inclusive erro de banco, como migração não aplicada ou função `consume_report_rate` ausente). Só as falhas de validação trazem mensagem própria. O app agora traduz: mensagens de validação ficam específicas; 400 genérico vira "O servidor recusou o relato (erro 400 sem detalhe). Provável problema de configuração da nuvem…", com o código HTTP guardado no relato e exibido em "Meus relatos". Se isso aparecer com payload válido, confira nos logs da função e se as migrações `20261117120000` e `20261117130000` (coluna `finalize_token` e função `consume_report_rate`) estão aplicadas no projeto.
+
+O app valida com a mesma `validateReport` antes de enviar; o teste `tests/v221-contract.test.ts` replica as regras e cobre 1 ou vários problemas, urgentes, com e sem texto (inclusive comentário colado acima do limite, que é truncado — os problemas marcados nunca se perdem), 0/1/2 fotos e ônibus conhecido ou "Não sei". Erros 4xx marcam o relato como "Falhou" (sem reenvio automático; botão "Reenviar"); rede, 408 e 5xx ficam "Pendente" com reenvio automático.
 
 ## Linha estruturada (início do campo `message`)
 

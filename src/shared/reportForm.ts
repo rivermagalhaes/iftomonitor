@@ -38,8 +38,10 @@ export function buildStructuredLine(form: ReportForm): string {
 const cleanComment = (text: string) => text.replace(/[<>]/g, '').replace(/\s+/g, ' ').trim();
 /** Texto final enviado no campo `message`: linha estruturada + comentário. */
 export function buildReportText(form: ReportForm): string {
-    const comment = cleanComment(form.comment);
-    return comment ? `${buildStructuredLine(form)} ${comment}` : buildStructuredLine(form);
+    const line = buildStructuredLine(form);
+    // Nunca perde os problemas marcados: é o comentário que é truncado para caber em MAX_TEXT.
+    const comment = cleanComment(form.comment).slice(0, Math.max(0, MAX_TEXT - line.length - 1)).trim();
+    return comment ? `${line} ${comment}` : line;
 }
 /** Quantos caracteres restam para o comentário. */
 export const commentRoom = (form: ReportForm) => Math.max(0, MAX_TEXT - buildStructuredLine({ ...form, comment: '' }).length - 1);
