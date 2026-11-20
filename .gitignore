@@ -10,3 +10,5 @@ android/local.properties
 android/**/build/
 
 hs_err_pid*.log
+
+supabase/.temp/
