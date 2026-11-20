@@ -36,3 +36,4 @@ button:not(:disabled):not(.secondary):not(.link):not(.danger):hover,button:not(:
 .speedUnit{font-size:20px}.speedBandLabel{font-weight:700}.episodes{padding-left:20px;line-height:1.8}
 .bigChoice{width:100%;min-height:64px;font-size:20px}.thumb{display:grid;gap:6px}.thumb img{max-width:100%;border-radius:12px}.chips{display:flex;flex-wrap:wrap;gap:8px}.trap{position:absolute;left:-10000px}
 .pageLayout{--qr-footer-offset:calc(78px + env(safe-area-inset-bottom))}
+.dot.idle{background:#9ca3af}.dot.recording{background:#2e7d32}.dot.pending{background:#f9a825}.dot.error{background:#c62828}

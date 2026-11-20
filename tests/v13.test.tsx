@@ -15,6 +15,7 @@ import { memoryRepository } from './support';
 import { configureGradle } from '../scripts/build-apk.mjs';
 // @ts-expect-error Helper JavaScript local.
 import { checkManifest } from '../scripts/check-android-manifest.mjs';
+vi.mock('../src/config/auth', () => ({ AUTH_LOGIN_ENABLED: true }));
 const point = (s: number, meters = 0, speed = 0, accuracy = 5): GpsPoint => ({ id: String(s), trip_id: 't', seq: s, latitude: 0, longitude: meters / 111194.9266, accuracy_m: accuracy, speed_mps: speed, recorded_at: new Date(s * 1000).toISOString(), received_at: new Date(s * 1000).toISOString(), device_id: 'd', source: 'demo', accepted: true, ...pending });
 const stationary = (start: number, meters = 0) => [0,10,20,30,40].map(t => point(start+t, meters));
 test('300 m a 1,2 m/s e pausa de 40 s: uma parada e distância coerente', () => {

@@ -22,7 +22,7 @@ export const t = {
     recordingForeground: "Segundo plano desativado: mantenha o app aberto e a tela acesa, ou permita a localização 'o tempo todo'.",
     recordingDenied: 'Localização negada. Permita a localização para registrar a viagem.',
     recordingNotifications: 'Notificações bloqueadas. Toque em Permitir avisos.',
-    recordingBattery: 'O app ainda não pode rodar sem restrição de bateria. Toque em Permitir uso contínuo.',
+    recordingBattery: 'O uso contínuo ainda não foi permitido. Toque em Permitir o que falta.',
     recordingUnavailable: 'Segundo plano ainda não confirmado. Mantenha o app aberto e a tela acesa.',
     recordingDemo: 'Demonstração: percurso simulado, sem coleta de localização real.',
     recordingGuide: 'Permitir o que falta', recordingSettings: 'Abrir configurações do app', recordingAllow: 'Permitir localização',

@@ -27,3 +27,11 @@
 - **Velocímetro** na tela Viagem, excessos calculados dos pontos (≥ 80 e ≥ 100 km/h), detalhe no Histórico, CSVs e aba *Velocidade* no painel. Ver `docs/VELOCIDADE.md`.
 - Decisões simples: o código do monitor é só barreira de uso; "urgente" = ao menos um item U; CSVs novos usam `;` e decimais com vírgula; a linha estruturada é limitada a 400 caracteres (o app impede marcar mais itens) para caber em 500 com o comentário.
 - Android versionName 2.2.0, versionCode 22000; permissões `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` e `CAMERA`; `@capacitor/camera`.
+
+## 2.2.1 - 2026-11-20
+
+- Corrigido: Ajustes do monitor não tinha "Mudar para modo Aluno" (nunca foi implementado na 2.2.0, apesar de constar em `docs/MODOS.md`). Agora há o botão (com confirmação; bloqueado com viagem em andamento) e, no aluno, "Entrar como monitor" com código. Engrenagem nas telas do aluno.
+- Corrigido: "Trocar modo de operação" (Ajustes) levava à tela de login antiga. Removido; login/demonstração desativados por `AUTH_LOGIN_ENABLED=false`; monitor novo entra no modo campo local automaticamente. Um celular que ficou em modo demonstração passa a campo local.
+- Bolinha do topo agora é um indicador com significado (cinza/verde/amarelo/vermelho). Antes era sempre vermelha, sem significado.
+- Auditoria: removidos os últimos textos sobre bateria (guia em Diagnóstico de GPS, mensagem de prontidão e texto da etapa). Versão/Nuvem subiram para o topo de Ajustes.
+- Android versionName 2.2.1, versionCode 22001. Os testes que dependiam da tela de login ligam `VITE_AUTH_LOGIN_ENABLED`.

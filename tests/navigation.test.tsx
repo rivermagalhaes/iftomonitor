@@ -4,6 +4,7 @@ import { App } from '../src/app/App';
 import { Monitor } from '../src/services/monitor';
 import { memoryRepository } from './support';
 import type { LocationProvider } from '../src/services/location';
+vi.mock('../src/config/auth', () => ({ AUTH_LOGIN_ENABLED: true }));
 beforeEach(() => { localStorage.clear(); window.location.hash = '/'; });
 function setup(denied = false) { const gps: LocationProvider = { onFix: () => { }, onError: () => { }, onStatus: () => { }, requestPermission: async () => { if (denied)
         throw new Error('Permissão de localização negada'); }, start: async () => { }, stop: async () => { } }; const repos = new Map<string, ReturnType<typeof memoryRepository>>(); const monitor = new Monitor(async (name) => { if (!repos.has(name))

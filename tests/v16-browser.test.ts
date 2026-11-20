@@ -5,7 +5,7 @@ import { createServer } from 'vite';
 import { resolve } from 'node:path';
 
 test('faixa de status fica opaca e fixa durante rolagem de todas as rotas', async () => {
-    const server = await createServer({ configFile: false, define: { 'import.meta.env.VITE_ALLOW_LOCAL_FIELD_MODE': JSON.stringify('true') }, resolve: { alias: [['react/jsx-dev-runtime','jsx-dev-runtime'],['react/jsx-runtime','jsx-runtime'],['react-dom/client','react-dom-client'],['react','react'],['react-router-dom','router'],['lucide-react','lucide']].map(([find,file]) => ({ find, replacement: resolve('node_modules/.ifto-deps',file+'.js') })) }, optimizeDeps: { noDiscovery: true }, server: { host: '127.0.0.1', port: 5198, strictPort: true } });
+    const server = await createServer({ configFile: false, define: { 'import.meta.env.VITE_ALLOW_LOCAL_FIELD_MODE': JSON.stringify('true'), 'import.meta.env.VITE_AUTH_LOGIN_ENABLED': JSON.stringify('true') }, resolve: { alias: [['react/jsx-dev-runtime','jsx-dev-runtime'],['react/jsx-runtime','jsx-runtime'],['react-dom/client','react-dom-client'],['react','react'],['react-router-dom','router'],['lucide-react','lucide']].map(([find,file]) => ({ find, replacement: resolve('node_modules/.ifto-deps',file+'.js') })) }, optimizeDeps: { noDiscovery: true }, server: { host: '127.0.0.1', port: 5198, strictPort: true } });
     await server.listen();
     const browser = await chromium.launch({ headless: true });
     try {

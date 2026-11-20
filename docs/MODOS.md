@@ -35,7 +35,7 @@ Código inicial: `IFTO2026`. O código **não** está em texto puro no código-f
 
 ## Troca de modo
 
-*Configurações* (aluno) → **Alterar modo** pede o código do monitor. De monitor para aluno não há código.
+*Ajustes* (aluno) → **Entrar como monitor** pede o código do monitor. De monitor para aluno não há código: em *Ajustes* há o botão **Mudar para modo Aluno** (com confirmação). A troca é bloqueada se houver viagem em andamento ("Finalize a viagem antes de mudar de modo.") e não apaga viagens, CSVs, nuvem nem o aceite dos termos. Em *Ajustes* do aluno há versão, termos e **Entrar como monitor** (pede o código; errado = continua aluno). O ícone de engrenagem fica no topo de todas as telas.
 
 ## Relatos e `ALLOWED_ORIGIN`
 
@@ -46,3 +46,11 @@ O app Capacitor envia relatos à Edge Function `submit-report` a partir da orige
 - Plugin local `BatteryOptimization` (`android/app/src/main/java/br/edu/ifto/monitor/BatteryOptimizationPlugin.java`, registrado em `MainActivity`), wrapper em `src/plugins/batteryOptimization.ts`. Fallback: `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`.
 - Permissões novas no manifesto: `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` e `CAMERA` (o script `scripts/check-android-manifest.mjs` valida as duas).
 - Fotos: `@capacitor/camera` (câmera ou galeria), reduzidas para JPEG, lado maior 1280 px, ≤ 1 MB.
+
+## Entrada do monitor e login antigo (v2.2.1)
+
+- A tela antiga ("Entrar com e-mail", "Continuar com Google", "Modo demonstração", "Modo campo local") está desativada por `AUTH_LOGIN_ENABLED = false` (`src/config/auth.ts`); o código de autenticação continua no projeto. O monitor entra sozinho no modo campo local (os termos aceitos no primeiro uso valem como ciência). O antigo botão "Trocar modo de operação" (que levava a essa tela) foi removido.
+
+## Indicador de status (bolinha no topo)
+
+Cinza = parado · verde = gravando viagem · amarelo = há viagens (ou relatos, no aluno) pendentes de envio · vermelho = erro real (sem permissão de localização durante a viagem, falha de sincronização, ou relato recusado). Toque/leitor de tela mostram o significado (`src/lib/status.ts`).

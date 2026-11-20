@@ -30,7 +30,7 @@ export function MonitorCodeForm({ onOk, onWrong, onCancel, verify = verifyMonito
 const stepInfo: Record<PermissionStep, { title: string; text: string; button: string }> = {
     location: { title: '1. Localização', text: 'Para gravar o percurso com a tela apagada, o app precisa da localização "o tempo todo". Ela só é usada durante a viagem iniciada.', button: 'Permitir localização' },
     notifications: { title: '2. Avisos', text: 'O Android exige um aviso fixo enquanto a viagem está sendo gravada.', button: 'Permitir avisos' },
-    battery: { title: '3. Uso contínuo', text: 'Para o Android não interromper a gravação, permita que o app rode sem restrição de bateria.', button: 'Permitir uso contínuo' },
+    battery: { title: '3. Uso contínuo', text: 'Para o Android não interromper a gravação com a tela apagada, permita o uso contínuo do app.', button: 'Permitir uso contínuo' },
 };
 const allSteps: PermissionStep[] = ['location', 'notifications', 'battery'];
 const stepOk = (step: PermissionStep, f: PermissionFlags) => step === 'location' ? f.locationAlways : step === 'notifications' ? f.notifications : f.batteryExempt;

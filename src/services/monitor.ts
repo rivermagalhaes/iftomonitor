@@ -8,6 +8,7 @@ import { SimulatedProvider, type LocationProvider, type GpsStatus, type GpsDiagn
 import { TripService } from './trip';
 import { acceptConsent, allowLocalFieldMode } from './modes';
 import { t } from '../i18n/pt-BR';
+import { AUTH_LOGIN_ENABLED } from '../config/auth';
 import { MonitorPermissions } from './monitorPermissions';
 import { getSupabase, exchangeCallback, signInEmail, signInGoogle } from './auth';
 import { cloudWriter, syncCloud } from './cloudSync';
@@ -95,7 +96,7 @@ export class Monitor {
         if (this.watchdogTimer) clearInterval(this.watchdogTimer);
         if (mode !== 'demo') this.watchdogTimer = setInterval(() => { if (!this.snapshot.busy) void this.checkRecording().catch(error => this.patch({ error: String(error) })); }, 15000);
         void this.sync().catch(() => { }); }
-    async restore() { const mode = localStorage.getItem('ifto_mode'); if (mode === 'demo' || mode === 'field' && allowLocalFieldMode()) {
+    async restore() { const mode = localStorage.getItem('ifto_mode'); if ((mode === 'demo' && AUTH_LOGIN_ENABLED) || mode === 'field' && allowLocalFieldMode()) {
         await this.enter(mode);
         return;
     } const client = getSupabase(); if (client) {

@@ -30,7 +30,6 @@ export function GpsDiagnostics({ monitor: m }: { monitor: Monitor }) {
         <dt>Notificações</dt><dd>{permission(state.notification)}</dd>
         <dt>Hora do último ponto recebido</dt><dd>{last ? dateTime(last.received_at) : 'Nenhum ponto recebido'}</dd>
         <dt>Intervalo médio dos últimos 10 pontos</dt><dd>{mean === null ? 'Aguardando dois pontos' : `${mean.toFixed(1)} s`}</dd></dl>
-        <p>Em Configurações do Android &gt; Apps &gt; IFTO Monitor &gt; Bateria, escolha 'Sem restrições'</p>
         <button className="secondary" disabled={s.busy} onClick={() => void m.run(() => m.refreshGpsDiagnostics())}>Atualizar diagnóstico</button>
         {m.provider?.openSettings && <button className="link" onClick={() => void m.run(() => m.provider!.openSettings!())}>Abrir Ajustes do Android</button>}
     </section>;

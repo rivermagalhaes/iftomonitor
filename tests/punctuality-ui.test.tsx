@@ -5,6 +5,7 @@ import { Monitor } from '../src/services/monitor';
 import { memoryRepository } from './support';
 import { defaultReference } from '../src/config/reference';
 import type { LocationProvider } from '../src/services/location';
+vi.mock('../src/config/auth', () => ({ AUTH_LOGIN_ENABLED: true }));
 
 afterEach(() => { vi.restoreAllMocks(); localStorage.clear(); window.location.hash = '/'; });
 function setup() {
