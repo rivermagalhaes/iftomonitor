@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Monitor } from '../services/monitor';
 import type { GpsPoint, Stop, Trip } from '../data/models';
-import { analyze, describeTrip, excludedLabels, formatMinutes, observedCsv, observedFileName, periodLabels, punctualityCsv, punctualityFileName, routeKeyOf, shiftLabels, statusLabels, statusTone, type Period, type TripBundle } from '../lib/punctualityReport';
+import { speedEpisodesCsv, speedFileName, speedSummaryCsv, speedSummaryFileName } from '../lib/speed';
+import { analyze, describeTrip, excludedLabels, formatMinutes, observedCsv, observedFileName, periodLabels, periodStartMs, punctualityCsv, punctualityFileName, routeKeyOf, shiftLabels, statusLabels, statusTone, type Period, type TripBundle } from '../lib/punctualityReport';
 import { formatMinutesOfDay } from '../lib/time';
 import type { ShiftOverride } from '../lib/punctuality';
 import { downloadFile } from '../services/export';
@@ -30,6 +31,14 @@ export function PunctualityScreen({ monitor: m }: { monitor: Monitor }) {
     const days = analysis.daily.slice(-14), maxAbs = Math.max(10, ...days.map(d => Math.abs(d.folga)));
     const ordered = [...analysis.results].sort((a, b) => (byId.get(b.tripId)?.started_at ?? '').localeCompare(byId.get(a.tripId)?.started_at ?? ''));
     const exportAll = () => void m.run(async () => { await downloadFile(punctualityFileName(period), punctualityCsv(analysis.trips, analysis.results, APP_VERSION), csvMime); m.patch({ notice: 'Exportação pronta.' }); });
+    const exportSpeed = () => void m.run(async () => {
+        const since = periodStartMs(period, Date.now());
+        const group = s.trips.filter(t => Date.parse(t.started_at) >= since && (routeKey === 'todas' || routeKeyOf(t) === routeKey)).map(trip => ({ trip, points: s.points.filter(p => p.trip_id === trip.id) }));
+        const label = period === 'all' ? 'tudo' : period;
+        await downloadFile(speedFileName(label), speedEpisodesCsv(group, APP_VERSION), csvMime);
+        await downloadFile(speedSummaryFileName(label), speedSummaryCsv(group, APP_VERSION), csvMime);
+        m.patch({ notice: 'Exportação de velocidade pronta.' });
+    });
     return <><h2>Pontualidade</h2>
         <fieldset className="card"><legend>Período</legend><div className="row">{(Object.keys(periodLabels) as Period[]).map(p => <button key={p} className={period === p ? 'selected' : 'secondary'} onClick={() => setPeriod(p)}>{periodLabels[p]}</button>)}</div></fieldset>
         <fieldset className="card"><legend>Rota</legend><div className="row wrap"><button className={routeKey === 'todas' ? 'selected' : 'secondary'} onClick={() => setRouteKey('todas')}>Todas</button>{routes.map(([key, name]) => <button key={key} className={routeKey === key ? 'selected' : 'secondary'} onClick={() => setRouteKey(key)}>{name}</button>)}</div></fieldset>
@@ -50,7 +59,7 @@ export function PunctualityScreen({ monitor: m }: { monitor: Monitor }) {
                     {r.events.length > 0 && <p>{describeTrip(r)}</p>}
                     {r.confidence === 'baixa' && <p className="muted">⚠ Confiança baixa: há lacunas de sinal perto do evento.</p>}
                 </button>; })}
-            <div className="row card"><button disabled={s.busy || !analysis.results.length} onClick={exportAll}>Exportar CSV de pontualidade</button></div>
+            <div className="row card"><button disabled={s.busy || !analysis.results.length} onClick={exportAll}>Exportar CSV de pontualidade</button><button className="secondary" disabled={s.busy || !s.trips.length} onClick={exportSpeed}>Exportar CSV de velocidade</button></div>
         </> : <>
             <p className="card muted">Horários que o ônibus de fato cumpre (mediana dos dias). Serve de base para a secretaria oficializar.</p>
             {!analysis.aggregate.groups.length && <p className="card muted">Nenhuma viagem válida no período. Escolha a rota e finalize viagens no horário de turno.</p>}

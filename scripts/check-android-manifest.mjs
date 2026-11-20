@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 export function checkManifest(text) {
  text = text.replace(/<!--[\s\S]*?-->/g, '');
- for (const permission of ['ACCESS_FINE_LOCATION','ACCESS_COARSE_LOCATION','ACCESS_BACKGROUND_LOCATION','FOREGROUND_SERVICE','FOREGROUND_SERVICE_LOCATION','POST_NOTIFICATIONS']) {
+ for (const permission of ['ACCESS_FINE_LOCATION','ACCESS_COARSE_LOCATION','ACCESS_BACKGROUND_LOCATION','FOREGROUND_SERVICE','FOREGROUND_SERVICE_LOCATION','POST_NOTIFICATIONS','REQUEST_IGNORE_BATTERY_OPTIMIZATIONS','CAMERA']) {
   if (!new RegExp(`<uses-permission\\b[^>]*android:name=["']android\\.permission\\.${permission}["']`).test(text)) throw new Error(`Manifesto sem ${permission}. APK não pode ser gerado.`);
  }
  return true;

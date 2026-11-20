@@ -84,3 +84,11 @@ export function referenceFromEnv(env: Record<string, unknown>): ReferenceConfig 
     if (radius !== null) candidate.campus.radiusM = radius;
     return validateReference(candidate).length ? cloneReference() : candidate;
 }
+
+/** Velocidade (km/h) — referências do projeto, NÃO o limite legal (que depende da sinalização de cada trecho). Ver docs/VELOCIDADE.md. */
+export const SPEED_WARN_KMH = 80;
+export const SPEED_HIGH_KMH = 100;
+/** Pontos com precisão pior que isso não entram no velocímetro nem nos episódios. */
+export const SPEED_MAX_ACCURACY_M = 20;
+/** Episódio: no mínimo 2 pontos consecutivos e esta duração (s) acima do limite. */
+export const SPEED_EPISODE_MIN_S = 10;

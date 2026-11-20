@@ -30,3 +30,9 @@ button:not(:disabled):not(.secondary):not(.link):not(.danger):hover,button:not(:
 .barRow{display:grid;grid-template-columns:44px 1fr 72px;gap:8px;align-items:center;margin:6px 0;font-size:13px}.barTrack{background:var(--color-soft);border-radius:8px;height:14px;overflow:hidden}.bar{display:block;height:100%;border-radius:8px}.bar.ok{background:var(--color-primary)}.bar.bad{background:var(--color-danger)}.barVal{text-align:right}
 .tripItem{text-align:left;display:block;background:white;color:var(--color-dark)}.tripItem .between{justify-content:space-between;gap:8px}.row.wrap{flex-wrap:wrap}.row.between{justify-content:space-between}
 .obsTable{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px}.obsTable th,.obsTable td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--color-border)}
+
+.speedometer{text-align:center;border-width:3px}.speedometer.ok{border-color:#2e7d32}.speedometer.warn{border-color:#f9a825;background:#fff8e1}.speedometer.high{border-color:#c62828;background:#fdecea}
+.speedValue{font-size:88px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}.speedometer.ok .speedValue{color:#1b5e20}.speedometer.warn .speedValue{color:#8a5a00}.speedometer.high .speedValue{color:#b71c1c}
+.speedUnit{font-size:20px}.speedBandLabel{font-weight:700}.episodes{padding-left:20px;line-height:1.8}
+.bigChoice{width:100%;min-height:64px;font-size:20px}.thumb{display:grid;gap:6px}.thumb img{max-width:100%;border-radius:12px}.chips{display:flex;flex-wrap:wrap;gap:8px}.trap{position:absolute;left:-10000px}
+.pageLayout{--qr-footer-offset:calc(78px + env(safe-area-inset-bottom))}

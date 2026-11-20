@@ -8,6 +8,7 @@ import { SimulatedProvider, type LocationProvider, type GpsStatus, type GpsDiagn
 import { TripService } from './trip';
 import { acceptConsent, allowLocalFieldMode } from './modes';
 import { t } from '../i18n/pt-BR';
+import { MonitorPermissions } from './monitorPermissions';
 import { getSupabase, exchangeCallback, signInEmail, signInGoogle } from './auth';
 import { cloudWriter, syncCloud } from './cloudSync';
 import { cloneReference, defaultReference, mergeReference, validateReference, type ReferenceConfig } from '../config/reference';
@@ -20,7 +21,6 @@ export interface Snapshot {
     batteryConfirmed: boolean;
     vehicles: Vehicle[];
     routes: Route[];
-    checklistUntil: number;
     recordingState: 'recording' | 'restarting' | 'stopped';
     lastPointAt: string | null;
     interruption: { from: string; to: string } | null;
@@ -51,8 +51,8 @@ export class Monitor {
     private reconnectTask: Promise<void> | null = null;
     private restartedTrips = new Set<string>();
     private syncTimer: ReturnType<typeof setTimeout> | null = null;
-    snapshot: Snapshot = { mode: null, operator: '', busLabel: '', batteryConfirmed: false, vehicles: [], routes: [], checklistUntil: 0, recordingState: 'recording', lastPointAt: null, interruption: null, trips: [], points: [], stops: [], active: null, recovery: false, gps: 'waiting', gpsDiagnostics: emptyDiagnostics(), backgroundExplained: false, error: '', notice: '', busy: false, settings: { ...defaults }, reference: cloneReference(defaultReference), online: navigator.onLine };
-    constructor(private open: (name: string) => Promise<Repository> = async (name) => new IndexedDbRepository(name), private location: (mode: Mode) => LocationProvider = createLocationProvider) { }
+    snapshot: Snapshot = { mode: null, operator: '', busLabel: '', batteryConfirmed: false, vehicles: [], routes: [], recordingState: 'recording', lastPointAt: null, interruption: null, trips: [], points: [], stops: [], active: null, recovery: false, gps: 'waiting', gpsDiagnostics: emptyDiagnostics(), backgroundExplained: false, error: '', notice: '', busy: false, settings: { ...defaults }, reference: cloneReference(defaultReference), online: navigator.onLine };
+    constructor(private open: (name: string) => Promise<Repository> = async (name) => new IndexedDbRepository(name), private location: (mode: Mode) => LocationProvider = createLocationProvider, public permissions: MonitorPermissions = new MonitorPermissions()) { }
     subscribe = (listener: () => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
     getSnapshot = () => this.snapshot;
     patch(patch: Partial<Snapshot>) { this.snapshot = { ...this.snapshot, ...patch }; this.listeners.forEach(fn => fn()); }
@@ -84,7 +84,7 @@ export class Monitor {
             if (type) void this.service.addEvent(type, { previous, current: gps }).catch(error => this.patch({ error: String(error) }));
         }
         this.patch({ gps });
-    }; this.provider = provider; this.service = new TripService(repository, mode, provider, settings, this.userId); this.service.onChange = () => { void this.refresh().catch(() => this.patch({ error: t.dbError })); }; this.service.onError = error => this.patch({ error }); this.service.onEvent = event => this.recordingEvent(event); const active = await this.service.recover(); let reference = cloneReference(); try { const row = await repository.get('app_meta', 'reference'); if (row) reference = mergeReference(JSON.parse(row.value)); } catch { /* mantém os padrões */ } this.patch({ reference, busLabel: (await repository.get('app_meta', 'bus_label'))?.value || '', batteryConfirmed: (await repository.get('app_meta', 'battery_confirmed'))?.value === '1', gpsDiagnostics: { ...emptyDiagnostics(), provider: mode === 'demo' ? 'simulated' : 'foreground' }, checklistUntil: Number((await repository.get('app_meta', 'recording_checklist_until'))?.value) || 0, interruption: null, backgroundExplained: !!await repository.get('app_meta', 'background_education_seen'), mode, settings, operator: (await repository.get('app_meta', 'operator_label'))?.value || t.demo, active, recovery: !!active, gps: 'waiting' }); localStorage.setItem('ifto_mode', mode); await this.refresh(); await this.refreshGpsDiagnostics();
+    }; this.provider = provider; this.service = new TripService(repository, mode, provider, settings, this.userId); this.service.onChange = () => { void this.refresh().catch(() => this.patch({ error: t.dbError })); }; this.service.onError = error => this.patch({ error }); this.service.onEvent = event => this.recordingEvent(event); const active = await this.service.recover(); let reference = cloneReference(); try { const row = await repository.get('app_meta', 'reference'); if (row) reference = mergeReference(JSON.parse(row.value)); } catch { /* mantém os padrões */ } this.patch({ reference, busLabel: (await repository.get('app_meta', 'bus_label'))?.value || '', batteryConfirmed: (await repository.get('app_meta', 'battery_confirmed'))?.value === '1', gpsDiagnostics: { ...emptyDiagnostics(), provider: mode === 'demo' ? 'simulated' : 'foreground' }, interruption: null, backgroundExplained: !!await repository.get('app_meta', 'background_education_seen'), mode, settings, operator: (await repository.get('app_meta', 'operator_label'))?.value || t.demo, active, recovery: !!active, gps: 'waiting' }); localStorage.setItem('ifto_mode', mode); await this.refresh(); await this.refreshGpsDiagnostics();
         if (active && mode !== 'demo') {
             if (!this.restartedTrips.has(active.id)) {
                 this.restartedTrips.add(active.id);
@@ -132,7 +132,7 @@ export class Monitor {
         return; const [vehicles, trips, points, stops, routes] = await Promise.all([this.repository.all('vehicles'), this.repository.all('trips'), this.repository.all('gps_points'), this.repository.all('stops'), this.repository.all('routes')]); const active = this.service?.active || null; const last = points.filter(p => p.trip_id === active?.id).sort((a,b) => a.recorded_at.localeCompare(b.recorded_at)).at(-1); this.patch({ vehicles, routes: routes.sort((a,b) => a.name.localeCompare(b.name, 'pt-BR')), lastPointAt: last?.recorded_at || null, recordingState: this.service?.recordingState || 'stopped', trips: trips.sort((a, b) => b.started_at.localeCompare(a.started_at)), points: points.sort((a, b) => a.recorded_at.localeCompare(b.recorded_at) || a.seq - b.seq), stops: mergeStops(stops), active: this.service?.active || null }); }
     get needsBackgroundEducation() { return this.snapshot.mode !== 'demo' && this.provider instanceof BackgroundNativeProvider && !this.snapshot.backgroundExplained; }
     async refreshGpsDiagnostics() {
-        try { await this.provider?.checkDiagnostics?.(); }
+        try { await this.provider?.checkDiagnostics?.(); if (this.snapshot.mode !== 'demo') this.patch({ batteryConfirmed: (await this.permissions.read()).batteryExempt }); }
         catch { this.patch({ gpsDiagnostics: { ...emptyDiagnostics(), provider: this.snapshot.gpsDiagnostics.provider } }); }
     }
     private recordingEvent(event: TripEvent) {
@@ -156,7 +156,6 @@ export class Monitor {
         if (this.provider instanceof BackgroundNativeProvider) await this.provider.reconcile(this.snapshot.settings);
         await this.checkRecording('resume');
     }
-    get needsRecordingChecklist() { return this.snapshot.mode !== 'demo' && Date.now() >= this.snapshot.checklistUntil; }
     async saveBusLabel(value: string) {
         const busLabel = value.trim().slice(0, 60);
         if (!busLabel) throw new Error('Escolha o nome do onibus.');
@@ -164,10 +163,6 @@ export class Monitor {
         await this.repository!.put('app_meta', { key: 'bus_label', value: busLabel });
         await this.refresh();
         this.patch({ busLabel });
-    }
-    async confirmBattery(confirmed: boolean) {
-        await this.repository!.put('app_meta', { key: 'battery_confirmed', value: confirmed ? '1' : '0' });
-        this.patch({ batteryConfirmed: confirmed });
     }
     get recordingReadiness(): 'ready' | 'foreground' | 'attention' | 'denied' | 'demo' {
         const s = this.snapshot, d = s.gpsDiagnostics;
@@ -177,14 +172,15 @@ export class Monitor {
         if (d.background !== 'granted' && d.background !== 'always') return 'foreground';
         return this.reliableRecording && (!s.active || (!s.active.paused && d.backgroundActive && s.recordingState === 'recording')) ? 'ready' : 'attention';
     }
+    /** Reabre SOMENTE a etapa pendente (um diálogo do sistema); negar não impede a viagem. */
+    async requestPendingPermission() {
+        const step = this.permissions.pending(await this.permissions.read());
+        if (step) await this.permissions.request(step);
+        await this.refreshGpsDiagnostics();
+    }
     get reliableRecording() {
         const d = this.snapshot.gpsDiagnostics;
         return (this.provider instanceof BackgroundNativeProvider || d.backgroundActive) && this.snapshot.batteryConfirmed && ['granted', 'always'].includes(d.foreground) && ['granted', 'always'].includes(d.background) && ['granted', 'always'].includes(d.notification);
-    }
-    async saveChecklistPreference(skipForDay: boolean) {
-        const until = skipForDay ? Date.now() + 86400000 : 0;
-        await this.repository!.put('app_meta', { key: 'recording_checklist_until', value: String(until) });
-        this.patch({ checklistUntil: until });
     }
     private routeService() {
         if (!this.repository || !this.service) throw new Error('Entre em um modo antes de editar rotas.');
@@ -209,7 +205,9 @@ export class Monitor {
         this.service.userId = this.userId; try {
         const route = routeId ? await this.repository!.get('routes', routeId) : null;
         if (routeId && (!route || !route.active)) throw new Error('Escolha uma rota ativa.');
-        await this.service?.start(vehicleId, route);
+        if (this.snapshot.mode !== 'demo') await this.requestPendingPermission();
+        const { batteryExempt, locationAlways, notifications } = await this.permissions.read(); const flags = { batteryExempt, locationAlways, notifications };
+        await this.service?.start(vehicleId, route, flags);
         this.patch({ interruption: null });
         this.patch({ recovery: false });
     }

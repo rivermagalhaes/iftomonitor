@@ -14,6 +14,8 @@ test('faixa de status fica opaca e fixa durante rolagem de todas as rotas', asyn
         page.on('pageerror', error => console.error('Browser v1.6:', error.message));
         const client = await page.context().newCDPSession(page);
         await client.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 28, bottom: 24, left: 0, right: 0 } });
+        // v2.2: pula o primeiro uso (termos, escolha de modo e permissões) para testar o app do monitor.
+        await page.addInitScript(() => { localStorage.setItem('ifto_terms', JSON.stringify({ version: '2.2', accepted_at: '2026-11-20T00:00:00Z' })); localStorage.setItem('ifto_app_mode', 'monitor'); localStorage.setItem('ifto_monitor_setup_done', '1'); });
         await page.goto('http://127.0.0.1:5198');
         await page.getByRole('heading', { name: 'Entrar com e-mail' }).waitFor();
         expect(await page.locator('.statusBarShield').count()).toBe(1);

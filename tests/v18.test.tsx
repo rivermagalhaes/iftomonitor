@@ -84,7 +84,7 @@ test('configuracao 10s persiste e indicador depende da bateria e permissoes', as
     const {m} = await setup(); await m.saveSettings({ ...defaults, stopMinDurationS: 10 }); expect(m.snapshot.settings.stopMinDurationS).toBe(10);
     const view = render(<MemoryRouter><SettingsScreen monitor={m}/></MemoryRouter>); expect(screen.getByRole('combobox')).toBeTruthy(); view.unmount();
     m.patch({ batteryConfirmed: true, gpsDiagnostics: { provider: 'background', foreground: 'granted', background: 'granted', notification: 'granted', backgroundActive: true } });
-    render(<MemoryRouter><Home monitor={m}/></MemoryRouter>); expect(m.reliableRecording).toBe(true); expect(screen.getByText(/Gravação confiável: OK/)).toBeTruthy(); m.patch({batteryConfirmed:false}); expect(m.reliableRecording).toBe(false); await m.dispose();
+    render(<MemoryRouter><Home monitor={m}/></MemoryRouter>); expect(m.reliableRecording).toBe(true); expect(screen.queryByText(/Gravação confiável/)).toBeNull(); m.patch({batteryConfirmed:false}); expect(m.reliableRecording).toBe(false); await m.dispose();
 });
 test('eventos ficam recolhidos por padrao', () => { const view = render(<RecordingEvents trip={trip}/>); expect(view.container.querySelector('details')?.open).toBe(false); });
 test('compartilha juntos e fallback individual apenas se multiplos nao suportados', async () => {
