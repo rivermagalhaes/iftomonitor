@@ -93,3 +93,17 @@ test('modo Aluno: só Relatar e Meus relatos, com engrenagem para Configuraçõe
     expect(within(nav).getAllByRole('link').map(a => a.textContent)).toEqual(['Relatar', 'Meus relatos']);
     expect(screen.getByRole('link', { name: 'Ajustes' })).toBeTruthy();
 });
+test('velocímetro aparece na tela Viagem durante a viagem, com máxima e faixa', async () => {
+    const { TripScreen } = await import('../src/screens/Screens');
+    const m = newMonitor(); await m.enter('field', 'AB', true); await m.saveBusLabel('Ônibus 01');
+    const now = Date.now();
+    const point = (i: number, kmh: number) => ({ id: 'p' + i, trip_id: 't', seq: i, latitude: -10, longitude: -48, accuracy_m: 5, speed_mps: kmh / 3.6, recorded_at: new Date(now - (3 - i) * 5000).toISOString(), received_at: '', device_id: 'd', source: 'gps', accepted: true }) as never;
+    const trip = { id: 't', vehicle_id: 'v', vehicle_label_snapshot: 'Ônibus 01', bus_label: 'Ônibus 01', route_name: '', route_id: null, status: 'recording', started_at: new Date(now - 60000).toISOString(), ended_at: null, gps_interval_ms: 10000, events: [] } as never;
+    m.patch({ active: trip, points: [point(0, 90), point(1, 104), point(2, 108)] });
+    render(<MemoryRouter><TripScreen monitor={m}/></MemoryRouter>);
+    const gauge = screen.getByLabelText('Velocímetro');
+    expect(gauge.className).toContain('high');
+    expect(within(gauge).getByText('Velocidade alta', { exact: false })).toBeTruthy();
+    expect(within(gauge).getByText('Máx. na viagem: 108 km/h')).toBeTruthy();
+    await m.dispose();
+});

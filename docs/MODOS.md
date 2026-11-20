@@ -53,4 +53,4 @@ O app Capacitor envia relatos à Edge Function `submit-report` a partir da orige
 
 ## Indicador de status (bolinha no topo)
 
-Cinza = parado · verde = gravando viagem · amarelo = há viagens (ou relatos, no aluno) pendentes de envio · vermelho = erro real (sem permissão de localização durante a viagem, falha de sincronização, ou relato recusado). Toque/leitor de tela mostram o significado (`src/lib/status.ts`).
+Cinza = parado · verde = gravando viagem · amarelo = há viagens pendentes de envio · vermelho = erro real (sem permissão de localização durante a viagem ou falha de sincronização). **No modo Aluno não há bolinha.** Toque/leitor de tela mostram o significado (`src/lib/status.ts`).

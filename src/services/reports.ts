@@ -8,7 +8,6 @@ export { categories };
 export type Category = typeof categories[number];
 export const categoryLabels: Record<Category, string> = { atraso: 'Atraso', quebra: 'Quebra', superlotacao: 'Superlotação', parada_nao_feita: 'Parada não feita', desvio: 'Desvio', limpeza_conservacao: 'Limpeza e conservação', seguranca: 'Segurança', outro: 'Outro' };
 export const BUS_CHIPS = ['Ônibus 01', 'Ônibus 02', 'Ônibus 03'] as const;
-export const ROUTE_CHIPS = ['Jardim Paulista', 'Pouso Alegre', 'Serrano'] as const;
 export const MAX_MESSAGE = 500, MAX_PHOTOS = 2;
 export type ReportStatus = 'pendente' | 'enviado' | 'falhou';
 export interface StoredReport { id: string; created_at: string; bus_label: string; route_name?: string; category: Category; message: string; photos: Blob[]; status: ReportStatus; error?: string; sent_at?: string }

@@ -35,3 +35,5 @@
 - Bolinha do topo agora é um indicador com significado (cinza/verde/amarelo/vermelho). Antes era sempre vermelha, sem significado.
 - Auditoria: removidos os últimos textos sobre bateria (guia em Diagnóstico de GPS, mensagem de prontidão e texto da etapa). Versão/Nuvem subiram para o topo de Ajustes.
 - Android versionName 2.2.1, versionCode 22001. Os testes que dependiam da tela de login ligam `VITE_AUTH_LOGIN_ENABLED`.
+- **Formulário do aluno em uma tela** (app e `#/relatar`): ônibus, 8 pílulas "Mais comuns", 7 categorias em acordeão e barra fixa (Tirar foto, Descrever, Enviar relato). Removidos o fluxo de 3 etapas, a tela "Quase pronto" e os seletores de rota, "Quando foi?" e lotação. A linha estruturada deixa de levar `rota` e `lotacao` (aceitos se existirem); a rota será inferida pelas viagens GPS. Ver `docs/RELATOS.md`.
+- Modo Aluno sem bolinha de status. Velocímetro conferido na tela Viagem (teste).

@@ -46,14 +46,13 @@ export function Root({ makeMonitor }: { makeMonitor?: () => Monitor } = {}) {
 /** Modo aluno: não cria o Monitor, não inicia GPS nem serviço em segundo plano. */
 function StudentApp() {
     const [queue] = useState(() => new ReportQueue(typeof indexedDB === 'undefined' ? new MemoryReportStore() : new IdbReportStore()));
-    const reports = useSyncExternalStore(queue.subscribe, queue.getSnapshot);
     useEffect(() => {
         void queue.load().then(() => queue.flush()).catch(() => { });
         let cleanup: undefined | (() => void);
         void observeNetwork(online => { if (online) void queue.flush().catch(() => { }); }).then(fn => { cleanup = fn; });
         return () => cleanup?.();
     }, [queue]);
-    return <HashRouter><PageLayout><header className="brandHeader"><LogoIF className="logo"/><div><h1>{t.appName}</h1><small>{t.subtitle}</small></div><StatusDot kind={statusKind({ recording: false, locationDenied: false, syncError: reports.some(r => r.status === 'falhou'), syncPending: reports.some(r => r.status === 'pendente') })}/><NavLink className="link" aria-label={t.settings} to="/settings"><SettingsIcon size={20}/></NavLink></header><main><Routes>
+    return <HashRouter><PageLayout><header className="brandHeader"><LogoIF className="logo"/><div><h1>{t.appName}</h1><small>{t.subtitle}</small></div><NavLink className="link" aria-label={t.settings} to="/settings"><SettingsIcon size={20}/></NavLink></header><main><Routes>
         <Route path="/" element={<ReportScreen queue={queue}/>}/><Route path="/relatar" element={<ReportScreen queue={queue}/>}/><Route path="/meus" element={<MyReportsScreen queue={queue}/>}/><Route path="/settings" element={<StudentSettings/>}/><Route path="*" element={<ReportScreen queue={queue}/>}/>
     </Routes></main><nav>{studentTabs.map(({ label, path, Icon }) => <NavLink end key={path} to={path}><Icon size={22}/>{label}</NavLink>)}</nav></PageLayout></HashRouter>;
 }

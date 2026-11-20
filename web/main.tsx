@@ -21,12 +21,12 @@ const lastTarget=():{bus?:string;route?:string}=>{try{return JSON.parse(localSto
 function pickFile():Promise<Blob|null>{return new Promise((resolve,reject)=>{const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=()=>{const file=input.files?.[0];if(!file)return resolve(null);compressPhoto(file).then(resolve).catch(()=>reject(new Error('Foto inválida ou maior que 1 MB.')));};input.oncancel=()=>resolve(null);input.click();});}
 function Report({hash}:{hash:string}){
  const qrBus=new URLSearchParams(hash.split('?')[1]||location.search).get('bus')||'';
- const [lists,setLists]=useState<{buses:string[];routes:string[]}|null>(null);
- useEffect(()=>{void Promise.all([db!.from('buses').select('*').eq('active',true).order('label'),db!.from('routes').select('*').eq('active',true).order('name')]).then(([b,r])=>setLists({buses:b.error||!b.data?.length?['Ônibus 01','Ônibus 02','Ônibus 03']:b.data.map(x=>String(x.label)),routes:r.error||!r.data?.length?['Jardim Paulista','Pouso Alegre','Serrano']:r.data.map(x=>String(x.name))}));},[]);
+ const [buses,setBuses]=useState<string[]|null>(null);
+ useEffect(()=>{void db!.from('buses').select('*').eq('active',true).order('label').then(b=>setBuses(b.error||!b.data?.length?['Ônibus 01','Ônibus 02','Ônibus 03']:b.data.map(x=>String(x.label))));},[]);
  const submit=async(form:ReportForm,photos:Blob[],honeypot:string)=>{const f=toPayloadFields(form);const payload=reportPayload(f.bus_label,f.route_name,f.category,f.message,photos.map(p=>({mime_type:p.type||'image/jpeg',size_bytes:p.size})),honeypot);const created=await invoke('submit-report',payload);const paths:string[]=[];for(let i=0;i<photos.length;i++){const upload=created.uploads[i];const result=await db!.storage.from('ifto-reports').uploadToSignedUrl(upload.path,upload.token,photos[i],{contentType:'image/jpeg'});if(result.error)throw new Error('Não foi possível enviar a foto. Tente de novo.');paths.push(upload.path);}await invoke('submit-report',{action:'finalize',report_id:created.report_id,finalize_token:created.finalize_token,paths});return 'enviado' as const;};
- if(!lists)return <p role="status">Carregando…</p>;
+ if(!buses)return <p role="status">Carregando…</p>;
  const last=lastTarget();
- return <section><h2>Relatar um problema</h2><p>O relato é anônimo.</p><QuickReport buses={lists.buses} routes={lists.routes} preset={{bus:qrBus||last.bus,route:last.route}} pickPhoto={pickFile} submit={submit} onRemember={(bus,route)=>{try{localStorage.setItem(LAST_KEY,JSON.stringify({bus,route}));}catch{/* sem armazenamento */}}}/></section>;
+ return <section><p>O relato é anônimo.</p><QuickReport buses={buses} preset={{bus:qrBus||last.bus}} pickPhoto={pickFile} submit={submit} onRemember={bus=>{try{localStorage.setItem(LAST_KEY,JSON.stringify({bus}));}catch{/* sem armazenamento */}}}/></section>;
 }
 function Panel({hash}:{hash:string}){
  const [admin,setAdmin]=useState<string|null>(null),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);

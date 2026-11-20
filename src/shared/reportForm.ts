@@ -25,9 +25,10 @@ export const routeCode = (label: string) => { const text = safe(label); return !
 export const busFromCode = (code: string) => code === 'nao_sei' || !code ? NAO_SEI : /^\d+$/.test(code) ? `Ônibus ${code}` : code;
 export const routeFromCode = (code: string) => code === 'nao_sei' || !code ? NAO_SEI : code;
 
-/** Linha: `[v1|bus=02|rota=Pouso Alegre|sentido=ida|quando=agora|lotacao=cheio|problemas=a,b,c]` */
+/** Linha: `[v1|bus=02|sentido=ida|quando=agora|problemas=a,b,c]` (rota e lotacao são opcionais; a rota é inferida depois pelas viagens GPS). */
 export function buildStructuredLine(form: ReportForm): string {
-    const parts = [`v${CHECKLIST_VERSION}`, `bus=${busCode(form.bus)}`, `rota=${routeCode(form.route)}`];
+    const parts = [`v${CHECKLIST_VERSION}`, `bus=${busCode(form.bus)}`];
+    if (form.route) parts.push(`rota=${routeCode(form.route)}`);
     if (form.sentido) parts.push(`sentido=${form.sentido}`);
     parts.push(`quando=${form.quando}`);
     if (form.lotacao) parts.push(`lotacao=${form.lotacao}`);
@@ -70,15 +71,11 @@ export function toPayloadFields(form: ReportForm) {
     return { bus_label: form.bus.trim() || NAO_SEI, route_name: !form.route || form.route === NAO_SEI ? '' : form.route.trim(), category: categoryFor(form.problems), message: buildReportText(form) };
 }
 
-export interface Preset { bus?: string; route?: string }
-/** Tela 1 (ônibus e rota) é pulada quando os dois já vêm marcados. */
-export const skipBusScreen = (form: Pick<ReportForm, 'bus' | 'route'>) => !!form.bus && !!form.route;
 /** Pelo menos 1 problema marcado para avançar da tela 2. */
 export const canAdvance = (form: Pick<ReportForm, 'problems'>) => form.problems.length >= 1;
 export function validateForm(form: ReportForm): string | null {
     if (!form.bus) return 'Escolha o ônibus.';
-    if (!form.route) return 'Escolha a rota.';
-    if (!canAdvance(form)) return 'Marque pelo menos 1 item.';
+    if (!canAdvance(form)) return 'Marque pelo menos um problema.';
     if (buildReportText(form).length > MAX_TEXT) return `O texto deve ter até ${MAX_TEXT} caracteres.`;
     return null;
 }

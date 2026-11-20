@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { categories, validateReport } from '../supabase/functions/_shared/validate';
 import { CHECKLIST_VERSION, canonicalProblems, categoryFor, checklistItems, checklistSections, isUrgent, primaryProblem, sortByUrgency, topUrgency } from '../src/shared/reportChecklist';
-import { MAX_LINE, MAX_TEXT, buildReportText, buildStructuredLine, canAddProblem, canAdvance, commentRoom, defaultSentido, emptyForm, parseStructuredLine, skipBusScreen, toPayloadFields, validateForm } from '../src/shared/reportForm';
+import { MAX_LINE, MAX_TEXT, buildReportText, buildStructuredLine, canAddProblem, canAdvance, commentRoom, defaultSentido, emptyForm, parseStructuredLine, toPayloadFields, validateForm } from '../src/shared/reportForm';
 import { filterRecords, reportCsvColumns, reportsCsv, sortRecords, summarize, toRecord, weekKey } from '../src/shared/reportsAnalysis';
 import { csvBr } from '../src/shared/csvBr';
 
@@ -16,13 +16,10 @@ test('checklist: 51 itens, 7 seções, ids únicos e urgências válidas', () =>
     expect(checklistItems.every(i => /^[a-z0-9_]+$/.test(i.id) && ['U', 'A', 'N'].includes(i.urgency) && (categories as readonly string[]).includes(i.category))).toBe(true);
     expect(checklistItems.filter(i => i.urgency === 'U').map(i => i.id).sort()).toEqual(['acidente_colisao', 'briga_assedio', 'freio_problema', 'motorista_alcool', 'quebrou_parou', 'superaquecimento_fumaca']);
 });
-test('mínimo de 1 item para avançar e tela de ônibus pulada só quando tudo vem marcado', () => {
+test('mínimo de 1 item para enviar', () => {
     expect(canAdvance({ problems: [] })).toBe(false);
     expect(canAdvance({ problems: ['elogio'] })).toBe(true);
-    expect(skipBusScreen({ bus: 'Ônibus 01', route: 'Serrano' })).toBe(true);
-    expect(skipBusScreen({ bus: 'Ônibus 01', route: '' })).toBe(false);
-    expect(skipBusScreen({ bus: '', route: '' })).toBe(false);
-    expect(validateForm({ ...form(), problems: [] })).toBe('Marque pelo menos 1 item.');
+    expect(validateForm({ ...form(), problems: [] })).toBe('Marque pelo menos um problema.');
     expect(validateForm(form())).toBeNull();
 });
 test('sentido pré-marcado pela hora', () => { expect(defaultSentido(new Date('2026-11-20T07:00:00'))).toBe('ida'); expect(defaultSentido(new Date('2026-11-20T17:30:00'))).toBe('volta'); });
@@ -34,6 +31,15 @@ test('linha estruturada: formato exato e ida e volta de ponta a ponta', () => {
     expect(parseStructuredLine(text)).toEqual({ version: 1, bus: 'Ônibus 02', route: 'Pouso Alegre', sentido: 'ida', quando: 'agora', lotacao: 'cheio', problems: ['pneu_furado', 'sem_cinto', 'superlotado'], comment: 'Pneu careca b' });
     const unknown = parseStructuredLine(buildReportText(form({ bus: 'Não sei', route: 'Não sei', sentido: '', lotacao: '', problems: ['outro'] })));
     expect(unknown).toMatchObject({ bus: 'Não sei', route: 'Não sei', sentido: '', lotacao: '', problems: ['outro'], comment: '' });
+});
+test('linha nova (sem rota e lotação) e linha antiga (v1 completa) são lidas', () => {
+    const novo = buildStructuredLine(form({ route: '', lotacao: '', problems: ['pneu_furado', 'sem_cinto'] }));
+    expect(novo).toBe('[v1|bus=02|sentido=ida|quando=agora|problemas=pneu_furado,sem_cinto]');
+    expect(parseStructuredLine(novo + ' texto')).toMatchObject({ bus: 'Ônibus 02', route: 'Não sei', lotacao: '', comment: 'texto', problems: ['pneu_furado', 'sem_cinto'] });
+    const antigo = parseStructuredLine('[v1|bus=03|rota=Serrano|sentido=volta|quando=noite|lotacao=cheio|problemas=superlotado] ok');
+    expect(antigo).toMatchObject({ bus: 'Ônibus 03', route: 'Serrano', sentido: 'volta', quando: 'noite', lotacao: 'cheio' });
+    const rec = toRecord({ created_at: '2026-11-20T12:00:00Z', route_name: null, message: novo });
+    expect(rec).toMatchObject({ structured: true, route: 'Não sei', lotacao: '', urgent: false });
 });
 test('relato antigo sem linha estruturada não é lido como estruturado', () => {
     expect(parseStructuredLine('Ônibus atrasou muito')).toBeNull();

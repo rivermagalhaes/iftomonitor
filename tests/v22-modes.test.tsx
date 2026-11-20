@@ -7,6 +7,7 @@ import { ModeChoice, MonitorSetup, TermsScreen } from '../src/screens/Onboarding
 import { MonitorPermissions, type PermissionDeps } from '../src/services/monitorPermissions';
 import { MemoryReportStore, NetworkError, ReportQueue, type ReportTransport } from '../src/services/reports';
 import { QuickReport } from '../src/shared/QuickReport';
+import { toPayloadFields, type ReportForm } from '../src/shared/reportForm';
 import { Monitor } from '../src/services/monitor';
 import { memoryRepository } from './support';
 import type { LocationProvider } from '../src/services/location';
@@ -108,35 +109,69 @@ test('fila offline de relatos reenvia quando a conexão volta', async () => {
     expect(await queue.submit({ bus_label: 'Ônibus 01', category: 'atraso', message: 'x', photos: [], honeypot: 'spam' })).toBeNull();
 });
 
-const stubs = { pickPhoto: async () => null, submit: vi.fn(async () => 'enviado' as const), buses: ['Ônibus 01', 'Ônibus 02', 'Ônibus 03'], routes: ['Jardim Paulista', 'Pouso Alegre', 'Serrano'] };
-test('formulário rápido: tela de ônibus aparece sem pré-marcação e exige 1 item', async () => {
+const stubs = { pickPhoto: async () => null, submit: vi.fn(async () => 'enviado' as const), buses: ['Ônibus 01', 'Ônibus 02', 'Ônibus 03'] };
+test('formulário em uma tela: tudo visível, barra fixa com 3 botões e contador', () => {
     render(<QuickReport {...stubs}/>);
-    expect(screen.getByText('1 de 3')).toBeTruthy();
-    const next = screen.getByRole('button', { name: 'Próximo' }) as HTMLButtonElement; expect(next.disabled).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Ônibus 02' })); fireEvent.click(screen.getByRole('button', { name: 'Não sei' }));
-    fireEvent.click(next);
-    expect(screen.getByText(/Emergência agora\? Ligue 190/)).toBeTruthy();
-    expect(screen.getAllByRole('checkbox')).toHaveLength(51);
-    const go = screen.getByRole('button', { name: 'Próximo' }) as HTMLButtonElement; expect(go.disabled).toBe(true);
+    expect(screen.getByText('Relatar problema')).toBeTruthy();
     expect(screen.getByText('0 marcados')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Pneu furado')); fireEvent.click(screen.getByLabelText('Ônibus sujo'));
-    expect(screen.getByText('2 marcados')).toBeTruthy(); expect(go.disabled).toBe(false);
+    expect(screen.getByText('Emergência agora? Ligue 190, 193 ou 192.')).toBeTruthy();
+    for (const b of ['Ônibus 01', 'Ônibus 02', 'Ônibus 03', 'Não sei']) expect(screen.getByRole('button', { name: b })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /^(Quebrou na estrada|Atrasou|Superlotado|Sem cinto|Não passou|Alta velocidade|Pneu furado|Muito quente)$/ })).toHaveLength(8);
+    expect(screen.getAllByRole('button', { expanded: false })).toHaveLength(8) // 7 categorias + Descrever;
+    expect(screen.getByRole('button', { name: 'Tirar foto' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Descrever' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Enviar relato' })).toBeTruthy();
 });
-test('formulário rápido: tudo pré-marcado pula a tela 1 e envia a linha estruturada', async () => {
+test('Mais comuns e lista completa compartilham o mesmo estado', () => {
+    render(<QuickReport {...stubs}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Sem cinto' }));
+    expect(screen.getByText('1 marcados', { selector: '.qrCount' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Segurança/ }));
+    const box = screen.getByLabelText('Sem cinto de segurança (ou cinto quebrado)') as HTMLInputElement;
+    expect(box.checked).toBe(true);
+    fireEvent.click(screen.getByLabelText('Superlotado / gente em pé'));
+    expect(screen.getByRole('button', { name: 'Superlotado' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('2 marcados', { selector: '.qrAccInfo' })).toBeTruthy();
+    fireEvent.click(box);
+    expect(screen.getByRole('button', { name: 'Sem cinto' }).getAttribute('aria-pressed')).toBe('false');
+});
+test('enviar sem marcar não é bloqueado: mostra a mensagem', async () => {
     const submit = vi.fn(async () => 'enviado' as const);
-    render(<QuickReport {...stubs} submit={submit} preset={{ bus: 'Ônibus 03', route: 'Serrano' }}/>);
-    expect(screen.getByText('1 de 2')).toBeTruthy(); expect(screen.queryByText('Ônibus e rota')).toBeNull();
-    fireEvent.click(screen.getByLabelText('Superlotado / gente em pé')); fireEvent.click(screen.getByRole('button', { name: 'Próximo' }));
+    render(<QuickReport {...stubs} submit={submit} preset={{ bus: 'Ônibus 02' }}/>);
+    const send = screen.getByRole('button', { name: 'Enviar relato' }) as HTMLButtonElement;
+    expect(send.disabled).toBe(false);
+    fireEvent.click(send);
+    await screen.findByText('Marque pelo menos um problema.');
+    expect(submit).not.toHaveBeenCalled();
+});
+test('enviar: ônibus pré-marcado, descrição e linha estruturada; depois Fazer outro relato', async () => {
+    const submit = vi.fn(async () => 'enviado' as const);
+    render(<QuickReport {...stubs} submit={submit} preset={{ bus: 'Ônibus 03' }}/>);
+    expect(screen.getByRole('button', { name: 'Ônibus 03' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Superlotado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
+    fireEvent.change(screen.getByLabelText('Descreva o problema'), { target: { value: 'gente em pé' } });
+    expect(screen.getByRole('button', { name: 'Descrever ✓' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Enviar relato' }));
     await screen.findByText('Relato enviado, obrigado!');
-    const form = (submit.mock.calls[0] as unknown as [{ bus: string; route: string; problems: string[]; quando: string }])[0];
-    expect(form).toMatchObject({ bus: 'Ônibus 03', route: 'Serrano', problems: ['superlotado'], quando: 'agora' });
+    const form = (submit.mock.calls[0] as unknown as [ReportForm])[0];
+    expect(form).toMatchObject({ bus: 'Ônibus 03', problems: ['superlotado'], quando: 'agora', comment: 'gente em pé' });
+    expect(toPayloadFields(form).message).toMatch(/^\[v1\|bus=03\|sentido=(ida|volta)\|quando=agora\|problemas=superlotado\] gente em pé$/);
     fireEvent.click(screen.getByRole('button', { name: 'Fazer outro relato' }));
-    expect(screen.getByText(/Emergência agora/)).toBeTruthy();
+    expect(screen.getByText('0 marcados')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ônibus 03' }).getAttribute('aria-pressed')).toBe('true');
 });
-test('formulário rápido: só o ônibus pré-marcado mostra Trocar na tela 1', () => {
-    render(<QuickReport {...stubs} preset={{ bus: 'Ônibus 02' }}/>);
-    expect(screen.getByText('Ônibus 02')).toBeTruthy(); expect(screen.getByRole('button', { name: 'Trocar' })).toBeTruthy();
+test('foto: rótulo vira Foto (1) e aceita no máximo 2', async () => {
+    const pick = vi.fn(async () => new Blob(['x'], { type: 'image/jpeg' }));
+    URL.createObjectURL = vi.fn(() => 'blob:x'); URL.revokeObjectURL = vi.fn();
+    render(<QuickReport {...stubs} pickPhoto={pick}/>);
+    fireEvent.click(screen.getByRole('button', { name: 'Tirar foto' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Foto (1)' }));
+    await screen.findByRole('button', { name: 'Foto (2)' });
+    expect((screen.getByRole('button', { name: 'Foto (2)' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(pick).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remover foto' })[0]);
+    expect(screen.getByRole('button', { name: 'Foto (1)' })).toBeTruthy();
 });
 
 const gps = (): LocationProvider => ({ onFix: () => { }, onError: () => { }, onStatus: () => { }, preserveAll: true, requestPermission: vi.fn(async () => { }), start: vi.fn(async () => { }), stop: vi.fn(async () => { }) });

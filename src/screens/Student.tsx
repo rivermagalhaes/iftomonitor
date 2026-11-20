@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APP_VERSION } from '../config/version';
 import { useModeApi } from '../app/ModeContext';
-import { BUS_CHIPS, ROUTE_CHIPS, categoryLabels, pickPhoto, type ReportQueue, type StoredReport } from '../services/reports';
+import { BUS_CHIPS, categoryLabels, pickPhoto, type ReportQueue, type StoredReport } from '../services/reports';
 import { QuickReport } from '../shared/QuickReport';
 import { toPayloadFields, type ReportForm } from '../shared/reportForm';
 import { parseStructuredLine } from '../shared/reportForm';
@@ -15,12 +15,12 @@ const summary = (r: StoredReport) => { const p = parsedOf(r); return p?.problems
 const comment = (r: StoredReport) => parsedOf(r)?.comment ?? r.message;
 const when = (iso: string) => new Date(iso).toLocaleString('pt-BR');
 const LAST_KEY = 'ifto_last_report_target';
-function readLast(): { bus?: string; route?: string } { try { return JSON.parse(localStorage.getItem(LAST_KEY) || '{}'); } catch { return {}; } }
-function readPreset(): { bus?: string; route?: string } {
+function readLast(): { bus?: string } { try { return JSON.parse(localStorage.getItem(LAST_KEY) || '{}'); } catch { return {}; } }
+function readPreset(): { bus?: string } {
     const last = readLast();
     // QR do ônibus: #/relatar?bus=... ou ?bus=...
     const query = new URLSearchParams((location.hash.split('?')[1] || '') || location.search).get('bus');
-    return { bus: query || last.bus, route: last.route };
+    return { bus: query || last.bus };
 }
 
 export function ReportScreen({ queue }: { queue: ReportQueue }) {
@@ -31,8 +31,8 @@ export function ReportScreen({ queue }: { queue: ReportQueue }) {
         const saved = await queue.submit({ ...fields, photos, honeypot });
         return saved?.status ?? 'enviado';
     };
-    return <QuickReport buses={[...BUS_CHIPS]} routes={[...ROUTE_CHIPS]} preset={preset} pickPhoto={() => pickPhoto()} submit={submit}
-        onRemember={(bus, route) => { try { localStorage.setItem(LAST_KEY, JSON.stringify({ bus, route })); } catch { /* sem armazenamento */ } }}
+    return <QuickReport buses={[...BUS_CHIPS]} preset={preset} pickPhoto={() => pickPhoto()} submit={submit}
+        onRemember={bus => { try { localStorage.setItem(LAST_KEY, JSON.stringify({ bus })); } catch { /* sem armazenamento */ } }}
         onOpenMyReports={() => navigate('/meus')}/>;
 }
 

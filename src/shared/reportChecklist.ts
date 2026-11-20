@@ -4,7 +4,7 @@
 export const CHECKLIST_VERSION = 1;
 export type Urgency = 'U' | 'A' | 'N';
 export type ReportCategory = 'atraso' | 'quebra' | 'superlotacao' | 'parada_nao_feita' | 'desvio' | 'limpeza_conservacao' | 'seguranca' | 'outro';
-export interface ChecklistItem { id: string; label: string; urgency: Urgency; category: ReportCategory }
+export interface ChecklistItem { id: string; label: string; urgency: Urgency; category: ReportCategory; /** Atalho "Mais comuns": posição (1–8) e rótulo curto. */ common?: { order: number; short: string } }
 export interface ChecklistSection { id: string; title: string; icon: string; items: ChecklistItem[] }
 const i = (id: string, label: string, urgency: Urgency, category: ReportCategory): ChecklistItem => ({ id, label, urgency, category });
 
@@ -77,6 +77,10 @@ export const checklistSections: ChecklistSection[] = [
 ];
 
 export const checklistItems: ChecklistItem[] = checklistSections.flatMap(s => s.items);
+/** Os 8 itens do atalho "Mais comuns", na ordem de exibição. */
+const COMMON: [string, string][] = [['quebrou_parou', 'Quebrou na estrada'], ['atraso_15', 'Atrasou'], ['superlotado', 'Superlotado'], ['sem_cinto', 'Sem cinto'], ['nao_passou', 'Não passou'], ['alta_velocidade', 'Alta velocidade'], ['pneu_furado', 'Pneu furado'], ['muito_quente', 'Muito quente']];
+COMMON.forEach(([id, short], index) => { const item = checklistItems.find(x => x.id === id); if (item) item.common = { order: index + 1, short }; });
+export const commonItems: ChecklistItem[] = COMMON.map(([id]) => checklistItems.find(x => x.id === id)!);
 export const itemById = new Map(checklistItems.map(item => [item.id, item]));
 const sectionOfId = new Map(checklistSections.flatMap(s => s.items.map(item => [item.id, s] as const)));
 const order = new Map(checklistItems.map((item, index) => [item.id, index]));

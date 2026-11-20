@@ -1,6 +1,14 @@
 # Relatos de alunos (v2.2.0)
 
-O aluno responde um formulário rápido de 3 telas (app no modo Aluno e página web `#/relatar`, **o mesmo componente**: `src/shared/QuickReport.tsx`). Nada de digitação obrigatória.
+O aluno usa **uma única tela** (app no modo Aluno e página web `#/relatar`, o mesmo componente `src/shared/QuickReport.tsx`), com barra fixa no rodapé:
+
+1. Título "Relatar problema" + contador "N marcados" e a faixa "Emergência agora? Ligue 190, 193 ou 192.".
+2. **Ônibus** (01, 02, 03, Não sei), pré-marcado pelo QR (`?bus=`) ou pelo último usado.
+3. **Mais comuns** (8 pílulas, campo `common` em `reportChecklist.ts`): Quebrou na estrada, Atrasou, Superlotado, Sem cinto, Não passou, Alta velocidade, Pneu furado, Muito quente. Mesmo estado da lista completa.
+4. **Ver todos os problemas**: 7 categorias em acordeão com os 51 itens.
+5. Barra fixa: **Tirar foto** (até 2), **Descrever** (até 500 caracteres) e **Enviar relato**. Sem marcação, o envio mostra "Marque pelo menos um problema.".
+
+Automáticos: data/hora, sentido (ida antes do meio-dia, volta depois), `quando=agora`, honeypot.
 
 ## Contrato com a nuvem (inalterado)
 
@@ -9,19 +17,20 @@ Edge Function `submit-report` (`create` → envio das fotos → `finalize`). Cam
 ## Linha estruturada (início do campo `message`)
 
 ```
-[v1|bus=02|rota=Pouso Alegre|sentido=ida|quando=agora|lotacao=cheio|problemas=pneu_furado,sem_cinto,superlotado] comentário do aluno
+[v1|bus=02|sentido=ida|quando=agora|problemas=pneu_furado,sem_cinto] comentário do aluno
 ```
 
 | Campo | Valores |
 |---|---|
 | `v1` | `CHECKLIST_VERSION` |
 | `bus` | número do ônibus (`01`, `02`, `03`) ou `nao_sei` |
-| `rota` | nome da rota ou `nao_sei` |
+| `rota` | **opcional** (ausente nos relatos novos): nome da rota ou `nao_sei` |
 | `sentido` | `ida` (indo para o IFTO), `volta` (voltando do IFTO); omitido se o aluno desmarcar |
 | `quando` | `agora`, `manha`, `noite`, `outro_dia` |
-| `lotacao` | `poucos`, `metade`, `cheio`, `superlotado`; omitido se não informado |
+| `lotacao` | **opcional** (ausente nos relatos novos): `poucos`, `metade`, `cheio`, `superlotado` |
 | `problemas` | ids do checklist, separados por vírgula, na ordem do checklist |
 
+- **Rota**: o relato novo não pergunta a rota. Ela será inferida depois, cruzando ônibus e horário do relato com as viagens GPS (`trips.bus_label` e período). O leitor aceita linhas com ou sem `rota` e `lotacao`; no painel e no CSV essas colunas ficam vazias quando ausentes. `route_name` vai vazio ao servidor.
 - Relatos antigos (sem a linha) continuam normais; o painel só não mostra etiquetas.
 - O texto todo cabe em 500 caracteres: a linha é limitada a 400 (o app impede marcar mais itens) e o comentário usa o restante.
 - `category` = categoria do **item de maior urgência** (U > A > N; empate: o primeiro na ordem do checklist), conforme a tabela abaixo. `route_name` fica vazio quando a rota é "Não sei".
