@@ -4,6 +4,7 @@ import {makeWebClient} from './client';
 import QRCode from 'qrcode';
 import {categories} from '../supabase/functions/_shared/validate';
 import {allRows,compressPhoto,reportPayload,qrUrl,filterRows,csv,download,type Row} from './lib';
+import {PunctualityPanel} from './Punctuality';
 import './style.css';
 const url=import.meta.env.VITE_SUPABASE_URL,key=import.meta.env.VITE_SUPABASE_ANON_KEY;
 const db=url&&key?makeWebClient(url,key):null;
@@ -22,7 +23,7 @@ function Panel({hash}:{hash:string}){
  const [admin,setAdmin]=useState<string|null>(null),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  useEffect(()=>{let live=true;const check=async()=>{const {data}=await db!.auth.getSession();if(!data.session){if(live)setAdmin(null);return;}const result=await db!.from('admins').select('user_id').eq('user_id',data.session.user.id).maybeSingle();if(result.error||!result.data){await db!.auth.signOut();if(live){setAdmin(null);setError('Sem permissão');}}else if(live)setAdmin(data.session.user.id);};void check();const {data}=db!.auth.onAuthStateChange(()=>{setTimeout(()=>void check(),0);});return()=>{live=false;data.subscription.unsubscribe();};},[]);
  if(!admin)return <form onSubmit={e=>{e.preventDefault();setBusy(true);void db!.auth.signInWithPassword({email,password}).then(({error})=>{setError(error?'Não foi possível entrar':'');setBusy(false);});}}><h2>Entrar no painel</h2><label>E-mail<input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Senha<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><button disabled={busy}>Entrar</button><p role="alert">{error}</p></form>;
- return <><nav>{['resumo','relatos','viagens','qrcodes'].map(p=><a key={p} href={'#/painel/'+p}>{p}</a>)}<button onClick={()=>void db!.auth.signOut()}>Sair</button></nav>{hash.includes('qrcodes')?<QRCodes/>:<Dashboard page={hash.split('/')[2]||'resumo'} id={hash.split('/')[3]} admin={admin}/>}</>;
+ return <><nav>{['resumo','relatos','viagens','pontualidade','qrcodes'].map(p=><a key={p} href={'#/painel/'+p}>{p}</a>)}<button onClick={()=>void db!.auth.signOut()}>Sair</button></nav>{hash.includes('qrcodes')?<QRCodes/>:hash.includes('pontualidade')?<PunctualityPanel db={db}/>:<Dashboard page={hash.split('/')[2]||'resumo'} id={hash.split('/')[3]} admin={admin}/>}</>;
 }
 function QRCodes(){const [codes,setCodes]=useState<{label:string;src:string}[]>([]),[error,setError]=useState('');useEffect(()=>{void allRows(db!,'buses').then(async rows=>setCodes(await Promise.all(rows.filter(b=>b.active).map(async b=>({label:String(b.label),src:await QRCode.toDataURL(qrUrl(location.origin,String(b.label)),{width:600,margin:4})}))))).catch(e=>setError(String(e)));},[]);return <><h2>QR codes</h2><button onClick={()=>print()}>Imprimir</button><p role="alert">{error}</p>{codes.map(c=><section className="qr" key={c.label}><img src={c.src} alt={'QR para relatar: '+c.label}/><h2>{c.label}</h2><p>Relate problemas do ônibus de forma anônima</p><a href={c.src} download={c.label+'.png'}>Baixar PNG</a></section>)}</>;}
 function Dashboard({page,id,admin}:{page:string;id?:string;admin:string}){

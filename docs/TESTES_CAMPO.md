@@ -114,3 +114,12 @@ Roteiro de aceite nos aparelhos:
 
 ### QA local da retomada (2026-11-17)
 Typecheck, lint, 179 testes e ambos os builds passaram sequencialmente. Migra??o v3?v4 validada em IndexedDB real no Chromium. Aceite f?sico permanece N?O TESTADO nesta sess?o: executar o roteiro acima no APK, incluindo modo avi?o sem configura??o de nuvem e preserva??o dos dados j? coletados. Logs: `docs/QA_V20_*.log`.
+
+## Versão 2.1.0 — pontualidade
+Roteiro de teste real (usar um celular com o APK 2.1.0):
+1. **Campus:** em Ajustes > Referências de horário, definir/confirmar o campus (conferir no mapa; usar "Usar o ponto final da última viagem como campus" se necessário) e salvar.
+2. **Manhã:** iniciar a viagem na cidade, escolher Ônibus e **ROTA**, e finalizar já dentro do campus.
+3. **Tarde/noite:** iniciar dentro do campus perto de 17:00, escolher a rota e finalizar ao voltar ao campus.
+4. **Conferir** na tela Pontualidade (cards, lista, barras, Tabela observada) e **exportar os dois CSVs** (pontualidade e tabela observada).
+5. Finalizar uma viagem sem rota: deve aparecer o aviso com atalho, sem bloquear. Trocar o turno de uma viagem em Histórico (Automático/Manhã/Tarde-noite/Ignorar) e ver o efeito.
+6. No painel web (`#/painel/pontualidade`), conferir os mesmos números após a sincronização.

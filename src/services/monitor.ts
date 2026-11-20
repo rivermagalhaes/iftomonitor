@@ -10,6 +10,8 @@ import { acceptConsent, allowLocalFieldMode } from './modes';
 import { t } from '../i18n/pt-BR';
 import { getSupabase, exchangeCallback, signInEmail, signInGoogle } from './auth';
 import { cloudWriter, syncCloud } from './cloudSync';
+import { cloneReference, defaultReference, mergeReference, validateReference, type ReferenceConfig } from '../config/reference';
+import type { ShiftOverride } from '../lib/punctuality';
 
 export interface Snapshot {
     mode: Mode | null;
@@ -32,8 +34,11 @@ export interface Snapshot {
     backgroundExplained: boolean;
     error: string;
     notice: string;
+    /** Atalho opcional exibido junto ao aviso (rota do app). */
+    noticeLink?: string;
     busy: boolean;
     settings: Settings;
+    reference: ReferenceConfig;
     online: boolean;
 }
 export class Monitor {
@@ -46,7 +51,7 @@ export class Monitor {
     private reconnectTask: Promise<void> | null = null;
     private restartedTrips = new Set<string>();
     private syncTimer: ReturnType<typeof setTimeout> | null = null;
-    snapshot: Snapshot = { mode: null, operator: '', busLabel: '', batteryConfirmed: false, vehicles: [], routes: [], checklistUntil: 0, recordingState: 'recording', lastPointAt: null, interruption: null, trips: [], points: [], stops: [], active: null, recovery: false, gps: 'waiting', gpsDiagnostics: emptyDiagnostics(), backgroundExplained: false, error: '', notice: '', busy: false, settings: { ...defaults }, online: navigator.onLine };
+    snapshot: Snapshot = { mode: null, operator: '', busLabel: '', batteryConfirmed: false, vehicles: [], routes: [], checklistUntil: 0, recordingState: 'recording', lastPointAt: null, interruption: null, trips: [], points: [], stops: [], active: null, recovery: false, gps: 'waiting', gpsDiagnostics: emptyDiagnostics(), backgroundExplained: false, error: '', notice: '', busy: false, settings: { ...defaults }, reference: cloneReference(defaultReference), online: navigator.onLine };
     constructor(private open: (name: string) => Promise<Repository> = async (name) => new IndexedDbRepository(name), private location: (mode: Mode) => LocationProvider = createLocationProvider) { }
     subscribe = (listener: () => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
     getSnapshot = () => this.snapshot;
@@ -79,7 +84,7 @@ export class Monitor {
             if (type) void this.service.addEvent(type, { previous, current: gps }).catch(error => this.patch({ error: String(error) }));
         }
         this.patch({ gps });
-    }; this.provider = provider; this.service = new TripService(repository, mode, provider, settings, this.userId); this.service.onChange = () => { void this.refresh().catch(() => this.patch({ error: t.dbError })); }; this.service.onError = error => this.patch({ error }); this.service.onEvent = event => this.recordingEvent(event); const active = await this.service.recover(); this.patch({ busLabel: (await repository.get('app_meta', 'bus_label'))?.value || '', batteryConfirmed: (await repository.get('app_meta', 'battery_confirmed'))?.value === '1', gpsDiagnostics: { ...emptyDiagnostics(), provider: mode === 'demo' ? 'simulated' : 'foreground' }, checklistUntil: Number((await repository.get('app_meta', 'recording_checklist_until'))?.value) || 0, interruption: null, backgroundExplained: !!await repository.get('app_meta', 'background_education_seen'), mode, settings, operator: (await repository.get('app_meta', 'operator_label'))?.value || t.demo, active, recovery: !!active, gps: 'waiting' }); localStorage.setItem('ifto_mode', mode); await this.refresh(); await this.refreshGpsDiagnostics();
+    }; this.provider = provider; this.service = new TripService(repository, mode, provider, settings, this.userId); this.service.onChange = () => { void this.refresh().catch(() => this.patch({ error: t.dbError })); }; this.service.onError = error => this.patch({ error }); this.service.onEvent = event => this.recordingEvent(event); const active = await this.service.recover(); let reference = cloneReference(); try { const row = await repository.get('app_meta', 'reference'); if (row) reference = mergeReference(JSON.parse(row.value)); } catch { /* mantém os padrões */ } this.patch({ reference, busLabel: (await repository.get('app_meta', 'bus_label'))?.value || '', batteryConfirmed: (await repository.get('app_meta', 'battery_confirmed'))?.value === '1', gpsDiagnostics: { ...emptyDiagnostics(), provider: mode === 'demo' ? 'simulated' : 'foreground' }, checklistUntil: Number((await repository.get('app_meta', 'recording_checklist_until'))?.value) || 0, interruption: null, backgroundExplained: !!await repository.get('app_meta', 'background_education_seen'), mode, settings, operator: (await repository.get('app_meta', 'operator_label'))?.value || t.demo, active, recovery: !!active, gps: 'waiting' }); localStorage.setItem('ifto_mode', mode); await this.refresh(); await this.refreshGpsDiagnostics();
         if (active && mode !== 'demo') {
             if (!this.restartedTrips.has(active.id)) {
                 this.restartedTrips.add(active.id);
@@ -225,6 +230,18 @@ export class Monitor {
             throw new Error(t.error); if (this.service?.capturing)
         throw new Error(t.recording); await this.repository!.put('app_meta', { key: 'settings', value: JSON.stringify(settings) }); if (this.service)
         this.service.config = settings; this.patch({ settings }); }
+    async saveReference(reference: ReferenceConfig) {
+        const errors = validateReference(reference);
+        if (errors.length) throw new Error(errors.join(' '));
+        await this.repository!.put('app_meta', { key: 'reference', value: JSON.stringify(reference) });
+        this.patch({ reference: cloneReference(reference) });
+    }
+    async setTripShift(id: string, shift: ShiftOverride) {
+        const now = new Date().toISOString();
+        const write = (update: (trip: Trip) => Trip) => this.service ? this.service.mutateTrip(id, update) : Promise.reject(new Error('Entre em um modo antes.'));
+        await write(trip => ({ ...trip, shift_override: shift, updated_at: now }));
+        await this.refresh();
+    }
     async manual() { await this.service?.manualStop(); await this.refresh(); }
     simulateStop() { if (this.provider instanceof SimulatedProvider)
         this.provider.simulateStop(); }

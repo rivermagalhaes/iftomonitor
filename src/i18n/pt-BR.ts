@@ -34,6 +34,7 @@ export const t = {
     emptyHistory: 'Nenhuma viagem registrada neste modo.', detail: 'Detalhe da viagem', csv: 'Exportar CSV', geojson: 'Exportar GeoJSON',
     mapUnavailable: 'Mapa de fundo indisponível sem internet', mapLabel: 'Trajeto da viagem', startPoint: 'Início', endPoint: 'Fim', currentPoint: 'Posição atual',
     dbError: 'Banco indisponível. Reabra o aplicativo e tente novamente.', retry: 'Tentar novamente', exportError: 'Falha ao exportar. Tente novamente.',
+    punctuality: 'Pontualidade', noRouteWarning: 'Viagem sem rota não entra no relatório de pontualidade. Escolha a rota em Histórico.',
     loading: 'Carregando…', simulatedStop: 'Simular parada', consentVersion: '1.0', version: `Versão do app: ${APP_VERSION}`,
     gpsInterval: 'Intervalo GPS (segundos)', maxAccuracy: 'Precisão máxima (metros)', stopSpeed: 'Velocidade de parada (km/h)', stopDuration: 'Duração mínima (segundos)', stopRadius: 'Raio de parada (metros)', maxGap: 'Lacuna máxima (segundos)',
     seeConsent: 'Ver termo de ciência', changeMode: 'Trocar modo de operação', waiting: 'Aguardando localização', accuracy: 'Precisão', duration: 'Duração', distance: 'Distância estimada', started: 'Início', ended: 'Fim',

@@ -689,3 +689,12 @@ Os builds foram gerados sem `.env`; apenas `.env.example` existe, com valores va
 Busca local de padr?es de credenciais em 104 arquivos de c?digo/documenta??o e modelos de ambiente: nenhuma ocorr?ncia de JWT, chave secreta Supabase, chave AWS ou chave privada. Nenhum segredo foi adicionado; service_role permanece restrito ?s Edge Functions. Sem `.git` nesta pasta, `git status --short` retorna ?not a git repository?; n?o foi poss?vel verificar arquivos rastreados nem hist?rico.
 
 Documenta??o atualizada nesta retomada: este relat?rio, `docs/TESTES_CAMPO.md` e `docs/NUVEM_E_RELATOS.md`; criados/atualizados os cinco logs de QA acima. Nenhum pacote instalado, SQL aplicado, deploy ou Gradle executado. Continuam manuais a ativa??o do Supabase/segredos/admin, deploy das fun??es e site, gera??o do APK e aceite nos tr?s celulares, conforme `docs/NUVEM_E_RELATOS.md`.
+
+## Versão 2.1.0 — pontualidade
+- Chegada ao campus (manhã, até 08:00), saída (17:00) e retorno (até 19:00) calculados no cliente, em horário local de Fortaleza (UTC−3), a partir de pontos aceitos. Definições em `docs/PONTUALIDADE.md`.
+- Motor puro em `src/lib/punctuality.ts`, tabela observada por proximidade em `src/lib/observedTimetable.ts`, relatório/CSV em `src/lib/punctualityReport.ts`, configuração em `src/config/reference.ts` (editável em Ajustes > Referências de horário, salva em `app_meta`).
+- Nova tela **Pontualidade** (aba), turno por viagem (`shift_override`, campo opcional aditivo; IndexedDB continua v4, nenhum dado alterado), aviso não bloqueante ao finalizar viagem sem rota, e aba **Pontualidade** no painel web (`#/painel/pontualidade`) reutilizando os mesmos módulos.
+- Sem SQL novo, sem dependência nova, sem `.env`. Versão 2.1.0; Android versionName 2.1.0, versionCode 21000. APK não gerado nesta etapa.
+- Verificação: typecheck, lint, 205 testes (23 arquivos), `npm run build` e `npm run build:web` verdes. Os testes de "nuvem ausente" assumem ambiente sem `VITE_SUPABASE_*`; com um `.env` local preenchido, 3 testes antigos (aviso/login sem nuvem) falham por ambiente, não por código — rodar com as variáveis vazias.
+- Observação sobre a regra de status: folga de exatamente 10 min é `no_limite` (0 ≤ folga ≤ 10); `adiantado` exige folga > 10 min.
+- Aceite físico: NÃO TESTADO; seguir o roteiro da v2.1.0 em `docs/TESTES_CAMPO.md`.

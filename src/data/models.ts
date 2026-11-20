@@ -44,6 +44,8 @@ export interface Trip extends SyncFields {
     gps_interval_ms?: number;
     route_id?: string | null;
     route_name?: string;
+    /** v2.1: turno manual da viagem para a pontualidade (ausente = auto). */
+    shift_override?: 'auto' | 'manha' | 'noite' | 'ignorar';
     events?: TripEvent[];
     created_at: string;
     updated_at: string;
