@@ -50,3 +50,9 @@
 - Painel: usuário e filtro por usuário (relatos e viagens); CSV de relatos com `usuario_nome`, `usuario_email`, `trip_id_curto`, `latitude`, `longitude`.
 - Decisões simples: o celular que ficou em "modo demonstração" cai no modo campo local; as chaves locais antigas (`ifto_app_mode`, `ifto_monitor_setup_done`) são ignoradas; o assistente de permissões usa um indicador local `ifto_trip_setup_done`.
 - Android versionName 2.3.0, versionCode 23000.
+
+## 2.3.1 - 2026-11-20
+
+- Envio de relato: contrato único em `src/shared/reportContract.ts` (função `submit-report`, ações `create`/`finalize`, limites), usado pelo app e pela página web; teste valida a ação e o payload contra as regras da função. "Meus relatos" mostra o texto real do campo `error` do servidor; 4xx não reenvia sozinho; relatos "Falhou" antigos são reenviados reconstruindo o payload do que está salvo.
+- **Causa do 400 (não é do cliente)**: o banco publicado NÃO tem a migração `supabase/migrations/20261117130000_ifto_monitor_cloud_fix.sql` (coluna `reports.finalize_token` e função `consume_report_rate`); a função devolve 400 "Não foi possível enviar" para qualquer falha interna. Aplicar a migração no projeto resolve; a função e o SQL não foram alterados aqui.
+- Android versionName 2.3.1, versionCode 23001.

@@ -2,6 +2,7 @@
 import {createRoot} from 'react-dom/client';
 import {makeWebClient} from './client';
 import QRCode from 'qrcode';
+import {REPORT_ACTION_FINALIZE,REPORT_BUCKET,REPORT_FUNCTION} from '../src/shared/reportContract';
 import {QuickReport} from '../src/shared/QuickReport';
 import {toPayloadFields,type ReportForm} from '../src/shared/reportForm';
 import {parseStructuredLine} from '../src/shared/reportForm';
@@ -23,7 +24,7 @@ function Report({hash}:{hash:string}){
  const qrBus=new URLSearchParams(hash.split('?')[1]||location.search).get('bus')||'';
  const [buses,setBuses]=useState<string[]|null>(null);
  useEffect(()=>{void db!.from('buses').select('*').eq('active',true).order('label').then(b=>setBuses(b.error||!b.data?.length?['Ônibus 01','Ônibus 02','Ônibus 03']:b.data.map(x=>String(x.label))));},[]);
- const submit=async(form:ReportForm,photos:Blob[],honeypot:string)=>{const f=toPayloadFields(form);const payload=reportPayload(f.bus_label,f.route_name,f.category,f.message,photos.map(p=>({mime_type:p.type||'image/jpeg',size_bytes:p.size})),honeypot);const created=await invoke('submit-report',payload);const paths:string[]=[];for(let i=0;i<photos.length;i++){const upload=created.uploads[i];const result=await db!.storage.from('ifto-reports').uploadToSignedUrl(upload.path,upload.token,photos[i],{contentType:'image/jpeg'});if(result.error)throw new Error('Não foi possível enviar a foto. Tente de novo.');paths.push(upload.path);}await invoke('submit-report',{action:'finalize',report_id:created.report_id,finalize_token:created.finalize_token,paths});return 'enviado' as const;};
+ const submit=async(form:ReportForm,photos:Blob[],honeypot:string)=>{const f=toPayloadFields(form);const payload=reportPayload(f.bus_label,f.route_name,f.category,f.message,photos.map(p=>({mime_type:p.type||'image/jpeg',size_bytes:p.size})),honeypot);const created=await invoke(REPORT_FUNCTION,payload);const paths:string[]=[];for(let i=0;i<photos.length;i++){const upload=created.uploads[i];const result=await db!.storage.from(REPORT_BUCKET).uploadToSignedUrl(upload.path,upload.token,photos[i],{contentType:'image/jpeg'});if(result.error)throw new Error('Não foi possível enviar a foto. Tente de novo.');paths.push(upload.path);}await invoke(REPORT_FUNCTION,{action:REPORT_ACTION_FINALIZE,report_id:created.report_id,finalize_token:created.finalize_token,paths});return 'enviado' as const;};
  if(!buses)return <p role="status">Carregando…</p>;
  const last=lastTarget();
  return <section><p>O relato é anônimo.</p><QuickReport buses={buses} preset={{bus:qrBus||last.bus}} pickPhoto={pickFile} submit={submit} onRemember={bus=>{try{localStorage.setItem(LAST_KEY,JSON.stringify({bus}));}catch{/* sem armazenamento */}}}/></section>;

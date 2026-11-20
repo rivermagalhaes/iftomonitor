@@ -4,28 +4,23 @@ import { openDB, type IDBPDatabase } from 'idb';
 import { categories, validateReport } from '../../supabase/functions/_shared/validate';
 import { compressPhoto } from '../../web/lib';
 import { getSupabase, isSupabaseConfigured } from './auth';
+import { REPORT_ACTION_CREATE, REPORT_ACTION_FINALIZE, REPORT_BUCKET, REPORT_FUNCTION, REPORT_GENERIC_ERROR, REPORT_MAX_PHOTOS, REPORT_MAX_TEXT } from '../shared/reportContract';
 export { categories };
 export type Category = typeof categories[number];
 export const categoryLabels: Record<Category, string> = { atraso: 'Atraso', quebra: 'Quebra', superlotacao: 'Superlotação', parada_nao_feita: 'Parada não feita', desvio: 'Desvio', limpeza_conservacao: 'Limpeza e conservação', seguranca: 'Segurança', outro: 'Outro' };
 export const BUS_CHIPS = ['Ônibus 01', 'Ônibus 02', 'Ônibus 03'] as const;
-export const MAX_MESSAGE = 500, MAX_PHOTOS = 2;
+export const MAX_MESSAGE = REPORT_MAX_TEXT, MAX_PHOTOS = REPORT_MAX_PHOTOS;
 export type ReportStatus = 'pendente' | 'enviado' | 'falhou';
 export interface StoredReport { id: string; created_at: string; bus_label: string; route_name?: string; category: Category; message: string; photos: Blob[]; status: ReportStatus; error?: string; sent_at?: string; http_status?: number }
 export interface ReportDraft { bus_label: string; route_name?: string; category: string; message: string; photos: Blob[]; honeypot?: string }
 export class NetworkError extends Error { constructor(message = 'Sem conexão. O relato será enviado quando a internet voltar.') { super(message); } }
 export class ReportRejected extends Error { constructor(message: string, public status?: number) { super(message); } }
-/** Mensagem curta e acionável para a resposta de erro da Edge Function `submit-report` (4xx). */
+/** Mensagem para o cartão do relato: o texto REAL do campo `error` devolvido pelo servidor. */
 export function friendlyServerError(status: number, serverMessage: unknown): string {
-    const msg = typeof serverMessage === 'string' ? serverMessage : '';
-    if (status === 429) return 'Limite diário de relatos atingido. Tente amanhã.';
-    if (/Texto/.test(msg)) return 'Texto inválido: não use os símbolos < e > e fique em até 500 caracteres.';
-    if (/Fotos/.test(msg)) return 'Fotos inválidas: use até 2 fotos de até 1 MB.';
-    if (/Categoria/.test(msg)) return 'Tipo de problema inválido. Marque os itens de novo.';
-    if (/Escreva/.test(msg)) return 'Marque um problema, escreva ou envie uma foto.';
-    if (/Envio inv/.test(msg) || status === 403) return 'O servidor recusou este envio. Tente de novo; se repetir, avise a equipe do projeto.';
-    if (status === 401) return 'Envio não autorizado: a chave da nuvem deste aplicativo está incorreta.';
-    if (status === 400) return 'O servidor recusou o relato (erro 400 sem detalhe). Provável problema de configuração da nuvem; avise a equipe do projeto.';
-    return `O servidor recusou o relato (erro ${status}).`;
+    const msg = typeof serverMessage === 'string' ? serverMessage.trim() : '';
+    if (status === 429) return msg || 'Limite diário de relatos atingido. Tente amanhã.';
+    if (msg === REPORT_GENERIC_ERROR) return `Servidor: "${msg}". É uma falha interna do servidor, não do seu relato; avise a equipe do projeto e use Reenviar depois.`;
+    return msg ? `Servidor: "${msg}".` : `O servidor recusou o relato (sem mensagem).`;
 }
 
 export interface ReportStore { all(): Promise<StoredReport[]>; put(report: StoredReport): Promise<void> }
@@ -51,7 +46,7 @@ export function httpTransport(
     const call = async (body: Record<string, unknown>) => {
         if (!env.url || !env.key) throw new ReportRejected('Envio indisponível: a nuvem não está configurada neste aplicativo.', 0);
         let response: Response;
-        try { response = await fetchFn(`${env.url.replace(/\/$/, '')}/functions/v1/submit-report`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: env.key, Authorization: `Bearer ${env.key}` }, body: JSON.stringify(body) }); }
+        try { response = await fetchFn(`${env.url.replace(/\/$/, '')}/functions/v1/${REPORT_FUNCTION}`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: env.key, Authorization: `Bearer ${env.key}` }, body: JSON.stringify(body) }); }
         catch { throw new NetworkError(); }
         if (response.status >= 500 || response.status === 408) throw new NetworkError('Serviço indisponível no momento. Tentaremos de novo.');
         const data = await response.json().catch(() => ({})) as Record<string, unknown>;
@@ -61,16 +56,16 @@ export function httpTransport(
     const put = upload ?? (async (path: string, token: string, blob: Blob) => {
         const client = getSupabase();
         if (!client) throw new ReportRejected('Envio indisponível: a nuvem não está configurada neste aplicativo.');
-        const { error } = await client.storage.from('ifto-reports').uploadToSignedUrl(path, token, blob, { contentType: 'image/jpeg' });
+        const { error } = await client.storage.from(REPORT_BUCKET).uploadToSignedUrl(path, token, blob, { contentType: 'image/jpeg' });
         if (error) throw new NetworkError('Não foi possível enviar a foto. Tentaremos de novo.');
     });
     return {
         async send(report) {
-            const payload = { ...validateReport({ bus_label: report.bus_label, route_name: report.route_name ?? '', category: report.category, message: report.message, photos: report.photos.map(p => ({ mime_type: p.type || 'image/jpeg', size_bytes: p.size })) }), honeypot: '', action: 'create' };
+            const payload = { ...validateReport({ bus_label: report.bus_label, route_name: report.route_name ?? '', category: report.category, message: report.message, photos: report.photos.map(p => ({ mime_type: p.type || 'image/jpeg', size_bytes: p.size })) }), honeypot: '', action: REPORT_ACTION_CREATE };
             const created = await call(payload);
             const paths: string[] = [];
             for (let i = 0; i < report.photos.length; i++) { const u = created.uploads[i]; await put(u.path, u.token, report.photos[i]); paths.push(u.path); }
-            await call({ action: 'finalize', report_id: created.report_id, finalize_token: created.finalize_token, paths });
+            await call({ action: REPORT_ACTION_FINALIZE, report_id: created.report_id, finalize_token: created.finalize_token, paths });
         },
     };
 }

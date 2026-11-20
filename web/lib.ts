@@ -5,7 +5,8 @@ export async function compressPhoto(file:File):Promise<Blob>{
  const bitmap=await createImageBitmap(file);try{const size=dimensions(bitmap.width,bitmap.height),canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Câmera indisponível');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
  const encode=(quality:number)=>new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Foto inválida')),'image/jpeg',quality));let result=await encode(.8);for(const quality of [.65,.5,.35]){if(result.size<=300*1024)break;result=await encode(quality);}if(!photoSizeValid(result.size))throw new Error('Foto maior que 1 MB');return result;}finally{bitmap.close();}
 }
-export const reportPayload=(bus_label:string,route_name:string,category:string,message:string,photos:PhotoInput[],honeypot='')=>({...validateReport({bus_label,route_name,category,message,photos,honeypot}),honeypot,action:'create'});
+import {REPORT_ACTION_CREATE} from '../src/shared/reportContract';
+export const reportPayload=(bus_label:string,route_name:string,category:string,message:string,photos:PhotoInput[],honeypot='')=>({...validateReport({bus_label,route_name,category,message,photos,honeypot}),honeypot,action:REPORT_ACTION_CREATE});
 export const qrUrl=(origin:string,bus:string)=>`${origin.replace(/\/$/,'')}/#/relatar?bus=${encodeURIComponent(bus)}`;
 export type Row=Record<string,unknown>;
 export function filterRows(rows:Row[],filters:Record<string,string>,from='',to=''){return rows.filter(r=>Object.entries(filters).every(([k,v])=>!v||r[k]===v)&&(!from||String(r.started_at||r.created_at)>=from)&&(!to||String(r.started_at||r.created_at)<=to+'T23:59:59.999Z'));}

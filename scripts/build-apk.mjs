@@ -64,7 +64,7 @@ function main() {
  run(process.execPath,['scripts/check-android-manifest.mjs']);
  run('npm',['run','build']); run('npx',['--no-install','cap','sync','android']);
  prepareGradle(root);
- run(windows?'gradlew.bat':'./gradlew',['assembleDebug','--no-daemon'],join(root,'android'));
+ run(windows?join(root,'android','gradlew.bat'):'./gradlew',['assembleDebug','--no-daemon'],join(root,'android'));
  const apk=join(root,'android/app/build/outputs/apk/debug/app-debug.apk');
  run(process.execPath,['scripts/check-android-manifest.mjs']);
  verifyApk(readFileSync(apk)); const info=statSync(apk); console.log(`APK verificado: ${apk}\n${info.size} bytes\n${info.mtime.toISOString()}`);
